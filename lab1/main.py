@@ -17,7 +17,8 @@ fontpath = "./simsun.ttc"
 font = ImageFont.truetype(fontpath, 32)
 img_pil = Image.fromarray(img)
 draw = ImageDraw.Draw(img_pil)
-draw.text((10, 100),  "国庆节/中秋节 快乐!", font = font, fill = (0, 255, 255, 255))
+draw.text((0, 0),  "国庆节/中秋节 快乐!", font=font, fill = (0, 255, 255, 155))
+img = np.array(img_pil)
 
 cv.imshow('233', img)
 cv.waitKey(-1)
