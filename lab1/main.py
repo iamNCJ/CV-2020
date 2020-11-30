@@ -101,10 +101,10 @@ class EndGen(VideoGeneratorBase):
         return img
 
 
-class ChildrenPaint(VideoGeneratorBase):
+class ChildrenPaint1(VideoGeneratorBase):
     def __init__(self):
         super().__init__()
-        self.frame_count = 96 * 3
+        self.frame_count = 96 * 2
 
     def frame_gen_func(self, frame_cnt):
         img = np.ones((height, width, 3), np.uint8) * 255
@@ -113,18 +113,48 @@ class ChildrenPaint(VideoGeneratorBase):
         cv2.rectangle(img, (350, 480), (370, 440), (255 * (self.frame_count - frame_cnt) / self.frame_count, 255, 255), 3)
         cv2.circle(img, (1080, int(93 * (frame_cnt / self.frame_count) - 63 * (self.frame_count - frame_cnt) / self.frame_count)), 63, (0, 0, 255), -1)
         cv2.ellipse(img, (340, 400), (80, 50), 0, 180, 180 * (1 + frame_cnt / self.frame_count), (255, 0, 0), -1)
-        pts = np.array([[10, 5], [20, 30], [70, 20], [50, 10]], np.int32)
-        pts = pts.reshape((-1, 1, 2))
-        cv2.polylines(img, [pts], True, (0, 255, 255))
         return img
 
 
+class ChildrenPaint2(VideoGeneratorBase):
+    def __init__(self):
+        super().__init__()
+        self.frame_count = 48
+
+    def frame_gen_func(self, frame_cnt):
+        img = np.ones((height, width, 3), np.uint8) * 255
+        cv2.ellipse(img, (int(width / 2), int(height / 2)), (300, 300), 0, 0, 360 * frame_cnt / self.frame_count, (255, 0, 0), 10)
+        cv2.circle(img, (510, int(290 * (frame_cnt / self.frame_count) - 63 * (self.frame_count - frame_cnt) / self.frame_count)), 63, (0, 0, 255), -1)
+        cv2.circle(img, (770, int(290 * (frame_cnt / self.frame_count) - 63 * (self.frame_count - frame_cnt) / self.frame_count)), 63, (0, 0, 255), -1)
+        cv2.ellipse(img, (640, 430), (100, 60), 0, 0, 180 * frame_cnt / self.frame_count, (0, 0, 0), -1)
+        return img
+
+
+class ChildrenPaint3(VideoGeneratorBase):
+    def __init__(self):
+        super().__init__()
+        self.frame_count = 48
+
+    def frame_gen_func(self, frame_cnt):
+        img = np.ones((height, width, 3), np.uint8) * 255
+        cv2.ellipse(img, (int(width / 2), int(height / 2)), (300, 300), 0, 0, 360 * frame_cnt / self.frame_count, (255, 0, 0), 10)
+        cv2.circle(img, (510, int(290 * (frame_cnt / self.frame_count) - 63 * (self.frame_count - frame_cnt) / self.frame_count)), 63, (0, 0, 255), -1)
+        cv2.circle(img, (770, int(290 * (frame_cnt / self.frame_count) - 63 * (self.frame_count - frame_cnt) / self.frame_count)), 63, (0, 0, 255), -1)
+        cv2.ellipse(img, (640, 430), (100, 60), 0, 0, 180 * frame_cnt / self.frame_count, (0, 0, 0), 5)
+        return img
+
 if __name__ == '__main__':
     ImageGen('assets/zju.png', 48).draw()
-    # ImageGen('assets/me.jpg', 24).draw()
+    ImageGen('assets/me.jpg', 24).draw()
     TextGen('曾充 3180106183', 24, 'assets/simsun.ttc').draw()
     TextGen('儿童画时间到！', 24, 'assets/simsun.ttc').draw()
-    ChildrenPaint().draw()
+    TextGen('太阳升起来了', 24, 'assets/simsun.ttc').draw()
+    ChildrenPaint1().draw()
+    TextGen('让我看看谁有早八？', 24, 'assets/simsun.ttc').draw()
+    ChildrenPaint2().draw()
+    TextGen('哦，原来是我啊（', 24, 'assets/simsun.ttc').draw()
+    ChildrenPaint3().draw()
+    TextGen('太丑了，不画了，不画了……', 24, 'assets/simsun.ttc').draw()
     RandomPixel(12).draw()
     EndGen("The End", 96).draw()
     EndGen("A ZC's Film", 96).draw()
