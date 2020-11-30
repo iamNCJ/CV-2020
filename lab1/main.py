@@ -109,10 +109,10 @@ class EndGen(VideoGeneratorBase):
 
 
 if __name__ == '__main__':
-    ImageGen('zju.png', 48).draw()
-    ImageGen('me.jpg', 24).draw()
-    TextGen('曾充 3180106183', 24, 'simsun.ttc').draw()
-    TextGen('儿童画时间到！', 24, 'simsun.ttc').draw()
+    ImageGen('assets/zju.png', 48).draw()
+    ImageGen('assets/me.jpg', 24).draw()
+    TextGen('曾充 3180106183', 24, 'assets/simsun.ttc').draw()
+    TextGen('儿童画时间到！', 24, 'assets/simsun.ttc').draw()
     CircleGen(12).draw()
     EndGen("The End", 96).draw()
     EndGen("A ZC's Film", 96).draw()
