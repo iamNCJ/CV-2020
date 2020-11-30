@@ -31,23 +31,19 @@ import numpy as np
 width = 1280
 height = 720
 FPS = 24
-seconds = 10
 radius = 150
 paint_h = int(height / 2)
 time_interval = 1.0 / FPS
+video_filename = 'lab1.mp4'
+preview_window_name = 'lab1'
+video = cv2.VideoWriter(video_filename, cv2.VideoWriter_fourcc(*'mp4v'), float(FPS), (width, height))
 
-fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-video = cv2.VideoWriter('./circle_noise.mp4', fourcc, float(FPS), (width, height))
 
-
-def drawing():
-    for paint_x in range(-radius, width + radius, 6):
+def drawing(frame_count, frame_gen_func):
+    for i in range(frame_count):
         frame_start_time = time.time()
-        frame = np.random.randint(0, 256,
-                                  (height, width, 3),
-                                  dtype=np.uint8)
-        cv2.circle(frame, (paint_x, paint_h), radius, (0, 0, 0), -1)
-        cv2.imshow('lab1', frame)
+        frame = frame_gen_func(i)
+        cv2.imshow(preview_window_name, frame)
         video.write(frame)
         wait_time = time_interval - (time.time() - frame_start_time)
         if wait_time > 0 and cv2.waitKey(int(wait_time * 1000)) == 32:
@@ -55,6 +51,15 @@ def drawing():
                 pass
 
 
-drawing()
+def test_draw_frame(frame_cnt):
+    paint_x = -radius + 6 * frame_cnt
+    frame = np.random.randint(0, 256,
+                              (height, width, 3),
+                              dtype=np.uint8)
+    cv2.circle(frame, (paint_x, paint_h), radius, (0, 0, 0), -1)
+    return frame
+
+
+drawing(int((width + 2 * radius) / 6), test_draw_frame)
 cv2.destroyAllWindows()
 video.release()
