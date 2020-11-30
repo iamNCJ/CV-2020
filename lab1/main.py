@@ -18,7 +18,6 @@ import cv2
 import numpy as np
 from PIL import ImageFont, ImageDraw, Image
 
-
 width = 1280
 height = 720
 FPS = 24
@@ -29,11 +28,15 @@ video = cv2.VideoWriter(video_filename, cv2.VideoWriter_fourcc(*'mp4v'), float(F
 
 
 class VideoGeneratorBase:
-    def __init__(self, frame_cnt: int, frame_gen_func):
-        self.frame_count = frame_cnt
-        self.frame_gen_func = frame_gen_func
+    def __init__(self):
+        self.frame_count = None
+
+    def frame_gen_func(self, frame_cnt):
+        raise NotImplementedError()
 
     def draw(self):
+        cv2.namedWindow(preview_window_name)
+        cv2.moveWindow(preview_window_name, 0, 0)
         for i in range(self.frame_count):
             frame_start_time = time.time()
             frame = self.frame_gen_func(i)
@@ -47,11 +50,12 @@ class VideoGeneratorBase:
 
 class CircleGen(VideoGeneratorBase):
     def __init__(self):
+        super().__init__()
         self.radius = 150
         self.paint_h = int(height / 2)
-        super().__init__(int((width + 2 * self.radius) / 6), self.circle_draw_frame)
+        self.frame_count = int((width + 2 * self.radius) / 6)
 
-    def circle_draw_frame(self, frame_cnt):
+    def frame_gen_func(self, frame_cnt):
         paint_x = -self.radius + 6 * frame_cnt
         frame = np.random.randint(0, 256,
                                   (height, width, 3),
@@ -61,24 +65,50 @@ class CircleGen(VideoGeneratorBase):
 
 
 class TextGen(VideoGeneratorBase):
-    def __init__(self):
-        self.step = 4
-        super().__init__(int(256 / self.step), self.text_draw_frame)
-        self.fontpath = 'simsun.ttc'
-        self.text = '曾充 3180106183'
+    def __init__(self, text, frames, font_file):
+        super().__init__()
+        self.frame_count = frames
+        self.font_path = font_file
+        self.text = text
 
-    def text_draw_frame(self, frame_cnt):
-        font = ImageFont.truetype(self.fontpath, 32)
-        img_pil = Image.fromarray(np.zeros((height, width, 3), np.uint8))
+    def frame_gen_func(self, frame_cnt):
+        font = ImageFont.truetype(self.font_path, 32)
+        img_pil = Image.fromarray(np.ones((height, width, 3), np.uint8) * 255)
         draw = ImageDraw.Draw(img_pil)
-        draw.text((0, 0),  self.text, font=font, fill=(frame_cnt * self.step, frame_cnt * self.step, frame_cnt * self.step, 255))
+        temp_val = 255 - int(255 * frame_cnt / self.frame_count)
+        draw.text((width / 2 - 118, height / 2), self.text, font=font, fill=(temp_val, temp_val, temp_val, 255))
         return np.array(img_pil)
 
 
+class ImageGen(VideoGeneratorBase):
+    def __init__(self, img_file, frames):
+        super().__init__()
+        self.frame_count = frames
+        self.img_file = img_file
+
+    def frame_gen_func(self, frame_cnt):
+        canvas = np.ones((height, width, 3), np.uint8) * 255
+        image = cv2.imread(self.img_file)
+        img_h, img_w, _ = image.shape
+        canvas[int(height / 2) - int(img_h / 2):int(height / 2) - int(img_h / 2) + img_h, int(width / 2) -
+               int(img_w / 2):int(width / 2) - int(img_w / 2) + img_w, :] = image[:, :, :] / self.frame_count * \
+               frame_cnt + np.ones((img_h, img_w, 3), np.uint8) / self.frame_count * 255 * (self.frame_count -
+                                                                                            frame_cnt)
+        return canvas
+
+
+class EndGen(VideoGeneratorBase):
+    def __init__(self):
+        super.__init__()
+
+    def frame_gen_func(self, frame_cnt):
+        
+
+
 if __name__ == '__main__':
-    video_gen = CircleGen()
-    text_gen = TextGen()
-    text_gen.draw()
-    video_gen.draw()
+    ImageGen('zju.png', 96).draw()
+    ImageGen('me.jpg', 96).draw()
+    TextGen('曾充 3180106183', 96, 'simsun.ttc').draw()
+    CircleGen().draw()
     cv2.destroyAllWindows()
     video.release()
