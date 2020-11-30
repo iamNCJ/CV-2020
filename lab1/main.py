@@ -42,9 +42,7 @@ class RandomPixel(VideoGeneratorBase):
         self.frame_count = frames
 
     def frame_gen_func(self, frame_cnt):
-        frame = np.random.randint(0, 256,
-                                  (height, width, 3),
-                                  dtype=np.uint8)
+        frame = np.random.randint(0, 256, (height, width, 3), dtype=np.uint8)
         return frame
 
 
@@ -77,15 +75,14 @@ class ImageGen(VideoGeneratorBase):
         img_h, img_w, _ = image.shape
         canvas[int(height / 2) - int(img_h / 2):int(height / 2) - int(img_h / 2) + img_h, int(width / 2) -
                                                                                           int(img_w / 2):int(
-            width / 2) - int(img_w / 2) + img_w, :] = image[:, :, :] / self.frame_count * \
-                                                      frame_cnt + np.ones((img_h, img_w, 3),
-                                                                          np.uint8) / self.frame_count * 255 * (
-                                                                  self.frame_count -
-                                                                  frame_cnt)
+            width / 2) - int(img_w / 2) + img_w, :] = image[:, :, :] / self.frame_count * frame_cnt \
+                                                      + np.ones((img_h, img_w, 3),
+                                                                np.uint8) / self.frame_count * 255 * (
+                                                                  self.frame_count - frame_cnt)
         return canvas
 
 
-class EndGen(VideoGeneratorBase):
+class ASCIIGen(VideoGeneratorBase):
     def __init__(self, text, frames):
         super().__init__()
         self.frame_count = frames
@@ -109,9 +106,13 @@ class ChildrenPaint1(VideoGeneratorBase):
     def frame_gen_func(self, frame_cnt):
         img = np.ones((height, width, 3), np.uint8) * 255
         cv2.line(img, (0, 480), (int(1280 * frame_cnt / self.frame_count), 480), (0, 0, 0), 2)
-        cv2.rectangle(img, (300, 480), (380, 400), (255 * (self.frame_count - frame_cnt) / self.frame_count, 255, 255), 3)
-        cv2.rectangle(img, (350, 480), (370, 440), (255 * (self.frame_count - frame_cnt) / self.frame_count, 255, 255), 3)
-        cv2.circle(img, (1080, int(93 * (frame_cnt / self.frame_count) - 63 * (self.frame_count - frame_cnt) / self.frame_count)), 63, (0, 0, 255), -1)
+        cv2.rectangle(img, (300, 480), (380, 400), (255 * (self.frame_count - frame_cnt) / self.frame_count, 255, 255),
+                      3)
+        cv2.rectangle(img, (350, 480), (370, 440), (255 * (self.frame_count - frame_cnt) / self.frame_count, 255, 255),
+                      3)
+        cv2.circle(img, (
+        1080, int(93 * (frame_cnt / self.frame_count) - 63 * (self.frame_count - frame_cnt) / self.frame_count)), 63,
+                   (0, 0, 255), -1)
         cv2.ellipse(img, (340, 400), (80, 50), 0, 180, 180 * (1 + frame_cnt / self.frame_count), (255, 0, 0), -1)
         return img
 
@@ -123,9 +124,14 @@ class ChildrenPaint2(VideoGeneratorBase):
 
     def frame_gen_func(self, frame_cnt):
         img = np.ones((height, width, 3), np.uint8) * 255
-        cv2.ellipse(img, (int(width / 2), int(height / 2)), (300, 300), 0, 0, 360 * frame_cnt / self.frame_count, (255, 0, 0), 10)
-        cv2.circle(img, (510, int(290 * (frame_cnt / self.frame_count) - 63 * (self.frame_count - frame_cnt) / self.frame_count)), 63, (0, 0, 255), -1)
-        cv2.circle(img, (770, int(290 * (frame_cnt / self.frame_count) - 63 * (self.frame_count - frame_cnt) / self.frame_count)), 63, (0, 0, 255), -1)
+        cv2.ellipse(img, (int(width / 2), int(height / 2)), (300, 300), 0, 0, 360 * frame_cnt / self.frame_count,
+                    (255, 0, 0), 10)
+        cv2.circle(img, (
+        510, int(290 * (frame_cnt / self.frame_count) - 63 * (self.frame_count - frame_cnt) / self.frame_count)), 63,
+                   (0, 0, 255), -1)
+        cv2.circle(img, (
+        770, int(290 * (frame_cnt / self.frame_count) - 63 * (self.frame_count - frame_cnt) / self.frame_count)), 63,
+                   (0, 0, 255), -1)
         cv2.ellipse(img, (640, 430), (100, 60), 0, 0, 180 * frame_cnt / self.frame_count, (0, 0, 0), -1)
         return img
 
@@ -137,11 +143,17 @@ class ChildrenPaint3(VideoGeneratorBase):
 
     def frame_gen_func(self, frame_cnt):
         img = np.ones((height, width, 3), np.uint8) * 255
-        cv2.ellipse(img, (int(width / 2), int(height / 2)), (300, 300), 0, 0, 360 * frame_cnt / self.frame_count, (255, 0, 0), 10)
-        cv2.circle(img, (510, int(290 * (frame_cnt / self.frame_count) - 63 * (self.frame_count - frame_cnt) / self.frame_count)), 63, (0, 0, 255), -1)
-        cv2.circle(img, (770, int(290 * (frame_cnt / self.frame_count) - 63 * (self.frame_count - frame_cnt) / self.frame_count)), 63, (0, 0, 255), -1)
+        cv2.ellipse(img, (int(width / 2), int(height / 2)), (300, 300), 0, 0, 360 * frame_cnt / self.frame_count,
+                    (255, 0, 0), 10)
+        cv2.circle(img, (
+        510, int(290 * (frame_cnt / self.frame_count) - 63 * (self.frame_count - frame_cnt) / self.frame_count)), 63,
+                   (0, 0, 255), -1)
+        cv2.circle(img, (
+        770, int(290 * (frame_cnt / self.frame_count) - 63 * (self.frame_count - frame_cnt) / self.frame_count)), 63,
+                   (0, 0, 255), -1)
         cv2.ellipse(img, (640, 430), (100, 60), 0, 0, 180 * frame_cnt / self.frame_count, (0, 0, 0), 5)
         return img
+
 
 if __name__ == '__main__':
     ImageGen('assets/zju.png', 48).draw()
@@ -156,8 +168,8 @@ if __name__ == '__main__':
     ChildrenPaint3().draw()
     TextGen('太丑了，不画了，不画了……', 24, 'assets/simsun.ttc').draw()
     RandomPixel(12).draw()
-    EndGen("The End", 96).draw()
-    EndGen("A ZC's Film", 96).draw()
-    EndGen("THX", 96).draw()
+    ASCIIGen("The End", 96).draw()
+    ASCIIGen("A ZC's Film", 96).draw()
+    ASCIIGen("THX", 96).draw()
     cv2.destroyAllWindows()
     video.release()
