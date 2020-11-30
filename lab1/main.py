@@ -1,5 +1,5 @@
 # # Create a black image
-# img = np.zeros((512,512,3), np.uint8)
+#
 # # Draw a diagonal blue line with thickness of 5 px
 # cv.line(img,(0,0),(511,511),(255,0,0),5)
 # cv.rectangle(img,(384,0),(510,128),(0,255,0),3)
@@ -8,8 +8,7 @@
 # pts = np.array([[10,5],[20,30],[70,20],[50,10]], np.int32)
 # pts = pts.reshape((-1,1,2))
 # cv.polylines(img,[pts],True,(0,255,255))
-# font = cv.FONT_HERSHEY_SIMPLEX
-# cv.putText(img,'opencv',(10,500), font, 4,(255,255,255),2,cv.LINE_AA)
+
 
 
 import time
@@ -49,18 +48,14 @@ class VideoGeneratorBase:
 
 
 class CircleGen(VideoGeneratorBase):
-    def __init__(self):
+    def __init__(self, frames):
         super().__init__()
-        self.radius = 150
-        self.paint_h = int(height / 2)
-        self.frame_count = int((width + 2 * self.radius) / 6)
+        self.frame_count = frames
 
     def frame_gen_func(self, frame_cnt):
-        paint_x = -self.radius + 6 * frame_cnt
         frame = np.random.randint(0, 256,
                                   (height, width, 3),
                                   dtype=np.uint8)
-        cv2.circle(frame, (paint_x, self.paint_h), self.radius, (0, 0, 0), -1)
         return frame
 
 
@@ -75,8 +70,9 @@ class TextGen(VideoGeneratorBase):
         font = ImageFont.truetype(self.font_path, 32)
         img_pil = Image.fromarray(np.ones((height, width, 3), np.uint8) * 255)
         draw = ImageDraw.Draw(img_pil)
+        w, h = draw.textsize(self.text, font=font)
         temp_val = 255 - int(255 * frame_cnt / self.frame_count)
-        draw.text((width / 2 - 118, height / 2), self.text, font=font, fill=(temp_val, temp_val, temp_val, 255))
+        draw.text(((width - w) / 2, (height - h) / 2), self.text, font=font, fill=(temp_val, temp_val, temp_val, 255))
         return np.array(img_pil)
 
 
@@ -98,17 +94,28 @@ class ImageGen(VideoGeneratorBase):
 
 
 class EndGen(VideoGeneratorBase):
-    def __init__(self):
-        super.__init__()
+    def __init__(self, text, frames):
+        super().__init__()
+        self.frame_count = frames
+        self.text = text
 
     def frame_gen_func(self, frame_cnt):
-        
+        img = np.ones((height, width, 3), np.uint8) * 255
+        (w, h), _ = cv2.getTextSize(self.text, cv2.FONT_HERSHEY_SIMPLEX, 4, 2)
+        cv2.putText(img, self.text, (int((width - w) / 2), int((-h) * frame_cnt / self.frame_count + (height + h) *
+                                     (self.frame_count - frame_cnt) / self.frame_count)), cv2.FONT_HERSHEY_SIMPLEX,
+                    4, (0, 0, 0), 2, cv2.LINE_AA)
+        return img
 
 
 if __name__ == '__main__':
-    ImageGen('zju.png', 96).draw()
-    ImageGen('me.jpg', 96).draw()
-    TextGen('曾充 3180106183', 96, 'simsun.ttc').draw()
-    CircleGen().draw()
+    ImageGen('zju.png', 48).draw()
+    ImageGen('me.jpg', 24).draw()
+    TextGen('曾充 3180106183', 24, 'simsun.ttc').draw()
+    TextGen('儿童画时间到！', 24, 'simsun.ttc').draw()
+    CircleGen(12).draw()
+    EndGen("The End", 96).draw()
+    EndGen("A ZC's Film", 96).draw()
+    EndGen("THX", 96).draw()
     cv2.destroyAllWindows()
     video.release()
