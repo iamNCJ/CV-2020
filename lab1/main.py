@@ -1,5 +1,3 @@
-# import numpy as np
-# import cv2 as cv
 # from PIL import ImageFont, ImageDraw, Image
 # # Create a black image
 # img = np.zeros((512,512,3), np.uint8)
@@ -19,10 +17,7 @@
 # draw = ImageDraw.Draw(img_pil)
 # draw.text((0, 0),  "国庆节/中秋节 快乐!", font=font, fill = (0, 255, 255, 155))
 # img = np.array(img_pil)
-#
-# cv.imshow('233', img)
-# cv.waitKey(-1)
-# cv.destroyAllWindows()
+
 import time
 
 import cv2
@@ -31,8 +26,6 @@ import numpy as np
 width = 1280
 height = 720
 FPS = 24
-radius = 150
-paint_h = int(height / 2)
 time_interval = 1.0 / FPS
 video_filename = 'lab1.mp4'
 preview_window_name = 'lab1'
@@ -56,18 +49,20 @@ class VideoGenerator():
                     pass
 
 
-def test_draw_frame(frame_cnt):
-    paint_x = -radius + 6 * frame_cnt
-    frame = np.random.randint(0, 256,
-                              (height, width, 3),
-                              dtype=np.uint8)
-    cv2.circle(frame, (paint_x, paint_h), radius, (0, 0, 0), -1)
-    return frame
-
-
 class CircleGen(VideoGenerator):
     def __init__(self):
-        super().__init__(int((width + 2 * radius) / 6), test_draw_frame)
+        self.radius = 150
+        self.paint_h = int(height / 2)
+        super().__init__(int((width + 2 * self.radius) / 6), self.test_draw_frame)
+
+    def test_draw_frame(self, frame_cnt):
+        paint_x = -self.radius + 6 * frame_cnt
+        frame = np.random.randint(0, 256,
+                                  (height, width, 3),
+                                  dtype=np.uint8)
+        cv2.circle(frame, (paint_x, self.paint_h), self.radius, (0, 0, 0), -1)
+        return frame
+
 
 if __name__ == '__main__':
     video_gen = CircleGen()
