@@ -39,16 +39,21 @@ preview_window_name = 'lab1'
 video = cv2.VideoWriter(video_filename, cv2.VideoWriter_fourcc(*'mp4v'), float(FPS), (width, height))
 
 
-def drawing(frame_count, frame_gen_func):
-    for i in range(frame_count):
-        frame_start_time = time.time()
-        frame = frame_gen_func(i)
-        cv2.imshow(preview_window_name, frame)
-        video.write(frame)
-        wait_time = time_interval - (time.time() - frame_start_time)
-        if wait_time > 0 and cv2.waitKey(int(wait_time * 1000)) == 32:
-            while cv2.waitKey(-1) != 32:
-                pass
+class VideoGenerator():
+    def __init__(self, frame_cnt: int, frame_gen_func):
+        self.frame_count = frame_cnt
+        self.frame_gen_func = frame_gen_func
+
+    def draw(self):
+        for i in range(self.frame_count):
+            frame_start_time = time.time()
+            frame = self.frame_gen_func(i)
+            cv2.imshow(preview_window_name, frame)
+            video.write(frame)
+            wait_time = time_interval - (time.time() - frame_start_time)
+            if wait_time > 0 and cv2.waitKey(int(wait_time * 1000)) == 32:
+                while cv2.waitKey(-1) != 32:
+                    pass
 
 
 def test_draw_frame(frame_cnt):
@@ -60,6 +65,12 @@ def test_draw_frame(frame_cnt):
     return frame
 
 
-drawing(int((width + 2 * radius) / 6), test_draw_frame)
-cv2.destroyAllWindows()
-video.release()
+class CircleGen(VideoGenerator):
+    def __init__(self):
+        super().__init__(int((width + 2 * radius) / 6), test_draw_frame)
+
+if __name__ == '__main__':
+    video_gen = CircleGen()
+    video_gen.draw()
+    cv2.destroyAllWindows()
+    video.release()
