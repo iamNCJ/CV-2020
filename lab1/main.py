@@ -1,16 +1,3 @@
-# # Create a black image
-#
-# # Draw a diagonal blue line with thickness of 5 px
-# cv.line(img,(0,0),(511,511),(255,0,0),5)
-# cv.rectangle(img,(384,0),(510,128),(0,255,0),3)
-# cv.circle(img,(447,63), 63, (0,0,255), -1)
-# cv.ellipse(img,(256,256),(100,50),0,0,180,255,-1)
-# pts = np.array([[10,5],[20,30],[70,20],[50,10]], np.int32)
-# pts = pts.reshape((-1,1,2))
-# cv.polylines(img,[pts],True,(0,255,255))
-
-
-
 import time
 
 import cv2
@@ -43,11 +30,13 @@ class VideoGeneratorBase:
             video.write(frame)
             wait_time = time_interval - (time.time() - frame_start_time)
             if wait_time > 0 and cv2.waitKey(int(wait_time * 1000)) == 32:
+                print('Paused')
                 while cv2.waitKey(-1) != 32:
                     pass
+                print('Continue')
 
 
-class CircleGen(VideoGeneratorBase):
+class RandomPixel(VideoGeneratorBase):
     def __init__(self, frames):
         super().__init__()
         self.frame_count = frames
@@ -87,9 +76,12 @@ class ImageGen(VideoGeneratorBase):
         image = cv2.imread(self.img_file)
         img_h, img_w, _ = image.shape
         canvas[int(height / 2) - int(img_h / 2):int(height / 2) - int(img_h / 2) + img_h, int(width / 2) -
-               int(img_w / 2):int(width / 2) - int(img_w / 2) + img_w, :] = image[:, :, :] / self.frame_count * \
-               frame_cnt + np.ones((img_h, img_w, 3), np.uint8) / self.frame_count * 255 * (self.frame_count -
-                                                                                            frame_cnt)
+                                                                                          int(img_w / 2):int(
+            width / 2) - int(img_w / 2) + img_w, :] = image[:, :, :] / self.frame_count * \
+                                                      frame_cnt + np.ones((img_h, img_w, 3),
+                                                                          np.uint8) / self.frame_count * 255 * (
+                                                                  self.frame_count -
+                                                                  frame_cnt)
         return canvas
 
 
@@ -103,17 +95,37 @@ class EndGen(VideoGeneratorBase):
         img = np.ones((height, width, 3), np.uint8) * 255
         (w, h), _ = cv2.getTextSize(self.text, cv2.FONT_HERSHEY_SIMPLEX, 4, 2)
         cv2.putText(img, self.text, (int((width - w) / 2), int((-h) * frame_cnt / self.frame_count + (height + h) *
-                                     (self.frame_count - frame_cnt) / self.frame_count)), cv2.FONT_HERSHEY_SIMPLEX,
+                                                               (self.frame_count - frame_cnt) / self.frame_count)),
+                    cv2.FONT_HERSHEY_SIMPLEX,
                     4, (0, 0, 0), 2, cv2.LINE_AA)
+        return img
+
+
+class ChildrenPaint(VideoGeneratorBase):
+    def __init__(self):
+        super().__init__()
+        self.frame_count = 96 * 3
+
+    def frame_gen_func(self, frame_cnt):
+        img = np.ones((height, width, 3), np.uint8) * 255
+        cv2.line(img, (0, 480), (int(1280 * frame_cnt / self.frame_count), 480), (0, 0, 0), 2)
+        cv2.rectangle(img, (300, 480), (380, 400), (255 * (self.frame_count - frame_cnt) / self.frame_count, 255, 255), 3)
+        cv2.rectangle(img, (350, 480), (370, 440), (255 * (self.frame_count - frame_cnt) / self.frame_count, 255, 255), 3)
+        cv2.circle(img, (1080, int(93 * (frame_cnt / self.frame_count) - 63 * (self.frame_count - frame_cnt) / self.frame_count)), 63, (0, 0, 255), -1)
+        cv2.ellipse(img, (340, 400), (80, 50), 0, 180, 180 * (1 + frame_cnt / self.frame_count), (255, 0, 0), -1)
+        pts = np.array([[10, 5], [20, 30], [70, 20], [50, 10]], np.int32)
+        pts = pts.reshape((-1, 1, 2))
+        cv2.polylines(img, [pts], True, (0, 255, 255))
         return img
 
 
 if __name__ == '__main__':
     ImageGen('assets/zju.png', 48).draw()
-    ImageGen('assets/me.jpg', 24).draw()
+    # ImageGen('assets/me.jpg', 24).draw()
     TextGen('曾充 3180106183', 24, 'assets/simsun.ttc').draw()
     TextGen('儿童画时间到！', 24, 'assets/simsun.ttc').draw()
-    CircleGen(12).draw()
+    ChildrenPaint().draw()
+    RandomPixel(12).draw()
     EndGen("The End", 96).draw()
     EndGen("A ZC's Film", 96).draw()
     EndGen("THX", 96).draw()
