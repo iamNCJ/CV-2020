@@ -91,7 +91,7 @@ def line_detection(img, num_rhos=360, num_thetas=360, threshold=0.5, min_count=0
     plt.show()
 
 
-def circle_detection(img, threshold=0.5, min_count=0, min_r=10, max_r=100):
+def circle_detection(img, threshold=0.5, min_count=0, min_r=100, max_r=200):
     def _debug():
         if debug:
             cv2.imshow('res', edge_image)
@@ -99,19 +99,10 @@ def circle_detection(img, threshold=0.5, min_count=0, min_r=10, max_r=100):
     print("Preprocessing image...")
     edge_image = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     _debug()
-    # edge_image = cv2.bilateralFilter(edge_image, 90, 75, 150)
-    # _debug()
-    # # edge_image = cv2.Canny(edge_image, 50, 150, apertureSize=3, L2gradient=True)
-    # # _debug()
-    # edge_image = cv2.dilate(edge_image, cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5)), iterations=3)
-    # _debug()
-    # edge_image = cv2.erode(edge_image, cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5)), iterations=3)
+    edge_image = cv2.bilateralFilter(edge_image, 90, 75, 150)
     _debug()
     edge_image = cv2.Canny(edge_image, 50, 150, apertureSize=3, L2gradient=True)
     _debug()
-    # edge_image = cv2.dilate(edge_image, cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3)), iterations=1)
-    # edge_image = cv2.erode(edge_image, cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3)), iterations=1)
-    # _debug()
 
     # Quantify parameter space
     height, width = edge_image.shape[:2]
@@ -155,15 +146,21 @@ def circle_detection(img, threshold=0.5, min_count=0, min_r=10, max_r=100):
     # pick up parameters which counts are large enough
     centers = np.argwhere(accumulator > auto_threshold)
     real_centers = []
-    for a, b in centers:
-        accumulator = np.zeros(max_r)
-        for y, x in edge_points:
-            distance = int(np.sqrt(np.square(x - a) + np.square(y - b)))
-            if min_r <= distance < max_r:
-                accumulator[distance] += 1
-
-    # a, b = centers[:, 0], centers[:, 1]
-    # a, b = _as[a_idx], _bs[b_idx]
+    for a, b in tqdm(centers):
+        _accumulator = np.zeros(max_r)
+        x0 = max(0, a - 100)
+        x1 = min(width, a + 100)
+        y0 = max(0, b - 100)
+        y1 = min(height, b + 100)
+        if accumulator[a, b] == np.max(accumulator[x0:x1, y0:y1]):
+            for y, x in edge_points:
+                distance = int(np.sqrt(np.square(x - a) + np.square(y - b)))
+                if min_r <= distance < max_r:
+                    _accumulator[distance] += 1
+            max_res = max(_accumulator)
+            if max_res > accumulator[a, b] * 0.3:
+                r = np.argwhere(_accumulator == max_res)[0][0]
+                real_centers.append((a, b, r))
 
     # Visualization
     # 4 subplots
@@ -178,35 +175,16 @@ def circle_detection(img, threshold=0.5, min_count=0, min_r=10, max_r=100):
     fig[1, 0].set_facecolor((0, 0, 0))
     fig[1, 0].set_title("Hough Space")
     fig[1, 0].invert_yaxis()
-    # fig[1, 1].imshow(img)
-    fig[1, 1].imshow(angle_deg, cmap='hot', interpolation='nearest')
+    fig[1, 1].imshow(img)
+    # fig[1, 1].imshow(angle_deg, cmap='hot', interpolation='nearest')
     fig[1, 1].set_title("Detected Circles")
     fig[1, 1].axis('off')
     # plot parameters
     fig[1, 0].imshow(accumulator.transpose(), cmap='hot', interpolation='nearest')
-    # for _b in tqdm(b_values):
-    #     fig[1, 0].plot(_as, _b, color="white", alpha=0.01)
-    # plot selected parameters
-    fig[0, 0].plot(real_centers[:, 0], real_centers[:, 1], marker='o', color='yellow')
+    # plot circles
     for a, b, r in real_centers:
-        fig[0, 0].add_patch(Circle((a, b), r))
-    # plot lines
-    # fig[1, 1].plot([a], [b], marker='o', color='yellow')
-    # for a, b in zip(range(width), range(height)):
-    #     cv2.drawMarker(img, (a, b), (int(angle[a, b] / 6.29 * 255), 0, 0))
-    # fig[1, 1].imshow(img)
-    # for _a, _b in zip(a, b):
-    #     cos_theta = np.cos(np.deg2rad(_theta))
-    #     sin_theta = np.sin(np.deg2rad(_theta))
-    #     # calculate [x1, y1] and [x2, y2] from parametric functions
-    #     x0 = (cos_theta * _rho) + width / 2
-    #     y0 = (sin_theta * _rho) + height / 2
-    #     x1 = int(x0 - diagonal * sin_theta)
-    #     y1 = int(y0 + diagonal * cos_theta)
-    #     x2 = int(x0 + diagonal * sin_theta)
-    #     y2 = int(y0 - diagonal * cos_theta)
-    #     # plot line
-        fig[1, 1].add_line(mlines.Line2D([x1, x2], [y1, y2]))
+        fig[1, 1].add_patch(Circle((a, b), r, fill=False, color='green'))
+        fig[1, 1].plot([a], [b], marker='o', color='blue')
     plt.show()
 
 
@@ -216,3 +194,5 @@ if __name__ == "__main__":
     # line_detection(cv2.imread(f"assets/sample-2.jpg"), num_rhos=720, num_thetas=720, threshold=0.30)
     # line_detection(cv2.imread(f"assets/sample-3.jpg"), min_count=200)
     circle_detection(cv2.imread(f"assets/sample-6.jpg"), threshold=0.60)
+    circle_detection(cv2.imread(f"assets/sample-1.jpg"), threshold=0.60, min_r=20, max_r=150)
+    circle_detection(cv2.imread(f"assets/sample-3.jpg"), threshold=0.60, min_r=20, max_r=75)
