@@ -190,9 +190,10 @@ def circle_detection(img, threshold=0.5, min_count=0, min_r=100, max_r=200):
 
 if __name__ == "__main__":
     debug = False
-    # line_detection(cv2.imread(f"assets/sample-1.jpg"), threshold=0.60)
-    # line_detection(cv2.imread(f"assets/sample-2.jpg"), num_rhos=720, num_thetas=720, threshold=0.30)
-    # line_detection(cv2.imread(f"assets/sample-3.jpg"), min_count=200)
+    line_detection(cv2.imread(f"assets/sample-1.jpg"), threshold=0.60)
+    line_detection(cv2.imread(f"assets/sample-2.jpg"), num_rhos=720, num_thetas=720, threshold=0.30)
+    line_detection(cv2.imread(f"assets/sample-3.jpg"), min_count=200)
     circle_detection(cv2.imread(f"assets/sample-6.jpg"), threshold=0.60)
     circle_detection(cv2.imread(f"assets/sample-1.jpg"), threshold=0.60, min_r=20, max_r=150)
+    circle_detection(cv2.imread(f"assets/sample-2.jpg"), threshold=0.90, min_r=20, max_r=30)
     circle_detection(cv2.imread(f"assets/sample-3.jpg"), threshold=0.60, min_r=20, max_r=75)
