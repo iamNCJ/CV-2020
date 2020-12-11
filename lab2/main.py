@@ -80,7 +80,7 @@ def line_detection(img, num_rhos=360, num_thetas=360, threshold=0.5, min_count=0
     plt.show()
 
 
-def circle_detection(img, threshold=0.5, min_count=0, min_r=30, max_r=200):
+def circle_detection(img, threshold=0.5, min_count=0, min_r=30, max_r=200, min_dis=50):
     def _debug():
         if debug:
             cv2.imshow('res', edge_image)
@@ -109,59 +109,65 @@ def circle_detection(img, threshold=0.5, min_count=0, min_r=30, max_r=200):
     edge_points = np.argwhere(edge_image != 0)
     # angles = [angle[tuple(x)] for x in edge_points]
     tans = np.tan(angle[edge_points.T[0], edge_points.T[1]])
-    # b = a * tan(theta) - x * tan(theta) + y
-    b_values = np.matmul(np.append(_as.reshape((_as.shape[0], 1)), np.ones((_as.shape[0], 1)), axis=1),
-                         np.vstack((tans.reshape(1, tans.shape[0]),
-                                    (-edge_points.T[1] * tans + edge_points.T[0]).reshape(tans.shape[0])))).transpose()
-    b_values = b_values.astype(int)
+    cos_s = np.cos(angle[edge_points.T[0], edge_points.T[1]])
+    # # b = a * tan(theta) - x * tan(theta) + y
+    # b_values = np.matmul(np.append(_as.reshape((_as.shape[0], 1)), np.ones((_as.shape[0], 1)), axis=1),
+    #                      np.vstack((tans.reshape(1, tans.shape[0]),
+    #                                 (-edge_points.T[1] * tans + edge_points.T[0]).reshape(tans.shape[0])))).transpose()
+    # b = r * cos(theta) + y
+    radius = np.append(np.arange(-max_r, min_r), np.arange(min_r, max_r))
+    b_values = np.matmul(np.append(radius.reshape((radius.shape[0], 1)), np.ones((radius.shape[0], 1)), axis=1),
+                         np.vstack((np.cos(angle[edge_points.T[0], edge_points.T[1]]).reshape(1, edge_points.shape[0]),
+                                    edge_points.T[0].reshape(edge_points.shape[0])))).transpose()
+    a_values = np.matmul(np.append(radius.reshape((radius.shape[0], 1)), np.ones((radius.shape[0], 1)), axis=1),
+                         np.vstack((np.sin(angle[edge_points.T[0], edge_points.T[1]]).reshape(1, edge_points.shape[0]),
+                                    edge_points.T[1].reshape(edge_points.shape[0])))).transpose()
+
     # filling the accumulator with np.histogram2d()
-    accumulator, _, _ = np.histogram2d(np.tile(_as, b_values.shape[0]), b_values.reshape(-1), bins=[_as, _bs])
+    accumulator, _, _ = np.histogram2d(a_values.reshape(-1), b_values.reshape(-1), bins=[_as, _bs])
     auto_threshold = np.max([min_count, np.max(accumulator) * threshold])
 
     # Results
     # pick up parameters which counts are large enough
+    print('Searching for centers...')
     voted_centers = np.argwhere(accumulator > auto_threshold)
     local_centers = np.empty((0, 3), int)
     for a, b in tqdm(voted_centers):
         _accumulator = np.zeros(max_r)
-        x0 = max(0, a - 10)
-        x1 = min(width, a + 10)
-        y0 = max(0, b - 10)
-        y1 = min(height, b + 10)
+        x0 = max(0, a - 1)
+        x1 = min(width, a + 1)
+        y0 = max(0, b - 1)
+        y1 = min(height, b + 1)
         if accumulator[a, b] == np.max(accumulator[x0:x1, y0:y1]):
             local_centers = np.append(local_centers, [[a, b, accumulator[a, b]]], axis=0)
     local_centers = local_centers[np.lexsort(np.transpose(local_centers))][::-1]
 
-    # centers = np.array([local_centers[0, :-1]])
-    # for a, b, _ in tqdm(local_centers[1:]):
-    #     distances = np.sqrt(np.sum(np.square(centers - (a, b)), axis=1))
-    #     if np.min(distances) > min_r:
-    #         centers = np.append(centers, [[a, b]], axis=0)
-    centers = local_centers[:, :-1]
+    print('Removing centers too close...')
+    centers = np.array([local_centers[0, :-1]])
+    for a, b, _ in tqdm(local_centers[1:]):
+        distances = np.sqrt(np.sum(np.square(centers - (a, b)), axis=1))
+        if np.min(distances) > min_r:
+            centers = np.append(centers, [[a, b]], axis=0)
 
+    print('Estimating radius...')
     real_centers = []
     for a, b in tqdm(centers):
-        distances = np.sqrt(np.sum(np.square(edge_points[:,[1,0]] - (a, b)), axis=1)).astype(int)
+        distances = np.sqrt(np.sum(np.square(edge_points[:, [1, 0]] - (a, b)), axis=1)).astype(int)
         radius = np.argmax(np.bincount(distances))
         if min_r < radius < max_r:
             real_centers.append((a, b, radius))
+    real_centers = np.array(real_centers)
 
-    # real_centers = []
-    # for a, b in tqdm(voted_centers):
-    #     _accumulator = np.zeros(max_r)
-    #     x0 = max(0, a - 10)
-    #     x1 = min(width, a + 10)
-    #     y0 = max(0, b - 10)
-    #     y1 = min(height, b + 10)
-    #     if accumulator[a, b] == np.max(accumulator[x0:x1, y0:y1]):
-    #         for y, x in edge_points:
-    #             distance = int(np.sqrt(np.square(x - a) + np.square(y - b)))
-    #             if min_r <= distance < max_r:
-    #                 _accumulator[distance] += 1
-    #         max_res = max(_accumulator)
-    #         if max_res > accumulator[a, b] * 0.3:
-    #             r = np.argwhere(_accumulator == max_res)[0][0]
-    #             real_centers.append((a, b, r))
+    print('Remove=ing overlaps...')
+    try:
+        final_centers = np.array([real_centers[0]])
+        for a, b, r in tqdm(real_centers[1:]):
+            distances = np.sqrt(np.sum(np.square(final_centers[:, [0, 1]] - (a, b)), axis=1))
+            if np.min(distances) > min_dis:
+                final_centers = np.append(final_centers, [[a, b, r]], axis=0)
+    except IndexError:
+        print('[!] No circles in this image!')
+        final_centers = real_centers
 
     # Visualization
     # 4 subplots
@@ -177,15 +183,12 @@ def circle_detection(img, threshold=0.5, min_count=0, min_r=30, max_r=200):
     fig[1, 0].set_title("Hough Space")
     fig[1, 0].invert_yaxis()
     fig[1, 1].imshow(img)
-    # fig[1, 1].imshow(angle_deg, cmap='hot', interpolation='nearest')
     fig[1, 1].set_title("Detected Circles")
     fig[1, 1].axis('off')
     # plot parameters
     fig[1, 0].imshow(accumulator.transpose(), cmap='hot', interpolation='nearest')
     # plot circles
-    # fig[1, 1].imshow(__accumulator.transpose(), cmap='hot', interpolation='nearest')
-
-    for a, b, r in real_centers:
+    for a, b, r in tqdm(final_centers):
         fig[1, 1].add_patch(Circle((a, b), r, fill=False, color='green'))
         fig[1, 1].plot([a], [b], marker='o', color='blue')
     plt.show()
@@ -193,10 +196,10 @@ def circle_detection(img, threshold=0.5, min_count=0, min_r=30, max_r=200):
 
 if __name__ == "__main__":
     debug = False
-    # line_detection(cv2.imread(f"assets/sample-1.jpg"), threshold=0.60)
-    # line_detection(cv2.imread(f"assets/sample-2.jpg"), num_rhos=720, num_thetas=720, threshold=0.30)
-    # line_detection(cv2.imread(f"assets/sample-3.jpg"), min_count=200)
-    circle_detection(cv2.imread(f"assets/sample-8.jpg"), threshold=0.80)
-    circle_detection(cv2.imread(f"assets/sample-1.jpg"), threshold=0.70, min_r=30, max_r=200)
-    # circle_detection(cv2.imread(f"assets/sample-2.jpg"), threshold=0.90, min_r=20, max_r=30)
-    circle_detection(cv2.imread(f"assets/sample-3.jpg"), threshold=0.60, min_r=20, max_r=200)
+    # line_detection(cv2.imread(f"assets/sample-1.jpg"), threshold=0.60) # ok
+    # line_detection(cv2.imread(f"assets/sample-2.jpg"), num_rhos=720, num_thetas=720, threshold=0.30) # ok
+    # line_detection(cv2.imread(f"assets/sample-3.jpg"), min_count=200) # ok
+    # circle_detection(cv2.imread(f"assets/sample-8.jpg"), threshold=0.47, min_r=36, max_r=50) # ok
+    circle_detection(cv2.imread(f"assets/sample-1.jpg"), threshold=0.00, min_r=15, max_r=120, min_dis=100)
+    # circle_detection(cv2.imread(f"assets/sample-2.jpg"), threshold=0.90) # ok
+    # circle_detection(cv2.imread(f"assets/sample-3.jpg"), threshold=0.10, min_r=2, max_r=80) # ok
