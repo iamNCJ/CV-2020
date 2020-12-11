@@ -131,15 +131,14 @@ def circle_detection(img, threshold=0.5, min_count=0, min_r=100, max_r=200):
             b = a * tan - x * tan + y
             if 0 <= b < height:
                 accumulator[a, int(b)] += 1
-        # accumulator[]
-        # accumulator += 1
-    # b_values = np.matmul(np.append(_as.reshape((_as.shape[0], 1)), np.ones((_as.shape[0], 1)), axis=1),
-    #                      np.vstack((tans.reshape(1, tans.shape[0]), (-edge_points.T[0] * tans + edge_points.T[1]).reshape(tans.shape[0])))).transpose()
-    #
-    # b_values = b_values.astype(int)
-    # # b_values = np.matmul(edge_points, np.array([sin_thetas, cos_thetas]))
-    # # filling the accumulator with np.histogram2d()
-    # accumulator, _, _ = np.histogram2d(np.tile(_as, b_values.shape[0]), b_values.reshape(-1), bins=[_as, _bs])
+
+    b_values = np.matmul(np.append(_as.reshape((_as.shape[0], 1)), np.ones((_as.shape[0], 1)), axis=1),
+                         np.vstack((tans.reshape(1, tans.shape[0]), (-edge_points.T[1] * tans + edge_points.T[0]).reshape(tans.shape[0])))).transpose()
+
+    b_values = b_values.astype(int)
+    # b_values = np.matmul(edge_points, np.array([sin_thetas, cos_thetas]))
+    # filling the accumulator with np.histogram2d()
+    __accumulator, _, _ = np.histogram2d(np.tile(_as, b_values.shape[0]), b_values.reshape(-1), bins=[_as, _bs])
     auto_threshold = np.max([min_count, np.max(accumulator) * threshold])
 
     # Results
@@ -148,10 +147,10 @@ def circle_detection(img, threshold=0.5, min_count=0, min_r=100, max_r=200):
     real_centers = []
     for a, b in tqdm(centers):
         _accumulator = np.zeros(max_r)
-        x0 = max(0, a - 100)
-        x1 = min(width, a + 100)
-        y0 = max(0, b - 100)
-        y1 = min(height, b + 100)
+        x0 = max(0, a - 1)
+        x1 = min(width, a + 1)
+        y0 = max(0, b - 1)
+        y1 = min(height, b + 1)
         if accumulator[a, b] == np.max(accumulator[x0:x1, y0:y1]):
             for y, x in edge_points:
                 distance = int(np.sqrt(np.square(x - a) + np.square(y - b)))
@@ -178,22 +177,24 @@ def circle_detection(img, threshold=0.5, min_count=0, min_r=100, max_r=200):
     fig[1, 1].imshow(img)
     # fig[1, 1].imshow(angle_deg, cmap='hot', interpolation='nearest')
     fig[1, 1].set_title("Detected Circles")
-    fig[1, 1].axis('off')
+    # fig[1, 1].axis('off')
     # plot parameters
     fig[1, 0].imshow(accumulator.transpose(), cmap='hot', interpolation='nearest')
     # plot circles
-    for a, b, r in real_centers:
-        fig[1, 1].add_patch(Circle((a, b), r, fill=False, color='green'))
-        fig[1, 1].plot([a], [b], marker='o', color='blue')
+    fig[1, 1].imshow(__accumulator.transpose(), cmap='hot', interpolation='nearest')
+
+    # for a, b, r in real_centers:
+    #     fig[1, 1].add_patch(Circle((a, b), r, fill=False, color='green'))
+    #     fig[1, 1].plot([a], [b], marker='o', color='blue')
     plt.show()
 
 
 if __name__ == "__main__":
     debug = False
-    line_detection(cv2.imread(f"assets/sample-1.jpg"), threshold=0.60)
-    line_detection(cv2.imread(f"assets/sample-2.jpg"), num_rhos=720, num_thetas=720, threshold=0.30)
-    line_detection(cv2.imread(f"assets/sample-3.jpg"), min_count=200)
-    circle_detection(cv2.imread(f"assets/sample-6.jpg"), threshold=0.60)
-    circle_detection(cv2.imread(f"assets/sample-1.jpg"), threshold=0.60, min_r=20, max_r=150)
-    circle_detection(cv2.imread(f"assets/sample-2.jpg"), threshold=0.90, min_r=20, max_r=30)
-    circle_detection(cv2.imread(f"assets/sample-3.jpg"), threshold=0.60, min_r=20, max_r=75)
+    # line_detection(cv2.imread(f"assets/sample-1.jpg"), threshold=0.60)
+    # line_detection(cv2.imread(f"assets/sample-2.jpg"), num_rhos=720, num_thetas=720, threshold=0.30)
+    # line_detection(cv2.imread(f"assets/sample-3.jpg"), min_count=200)
+    circle_detection(cv2.imread(f"assets/sample-8.jpg"), threshold=0.80)
+    # circle_detection(cv2.imread(f"assets/sample-1.jpg"), threshold=0.60, min_r=20, max_r=150)
+    # circle_detection(cv2.imread(f"assets/sample-2.jpg"), threshold=0.90, min_r=20, max_r=30)
+    # circle_detection(cv2.imread(f"assets/sample-3.jpg"), threshold=0.60, min_r=20, max_r=75)
