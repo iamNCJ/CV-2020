@@ -35,10 +35,10 @@ def line_detection(img, num_rhos=360, num_thetas=360, threshold=0.5, min_count=0
     rho_values = np.matmul(edge_points, np.array([sin_thetas, cos_thetas]))
     # filling the accumulator with np.histogram2d()
     accumulator, _, _ = np.histogram2d(np.tile(thetas, rho_values.shape[0]), rho_values.reshape(-1), bins=[thetas, rhos])
-    auto_threshold = np.max([min_count, np.max(accumulator) * threshold])
 
     # Results
     # pick up parameters which counts are large enough
+    auto_threshold = np.max([min_count, np.max(accumulator) * threshold])
     lines = np.argwhere(np.transpose(accumulator) > auto_threshold)
     rho_idx, theta_idx = lines[:, 0], lines[:, 1]
     rho, theta = rhos[rho_idx], thetas[theta_idx]
@@ -54,16 +54,15 @@ def line_detection(img, num_rhos=360, num_thetas=360, threshold=0.5, min_count=0
     fig[0, 1].set_title("Edge Image")
     fig[0, 1].axis('off')
     fig[1, 0].set_facecolor((0, 0, 0))
+    # plot parameters
     fig[1, 0].set_title("Hough Space")
+    fig[1, 0].imshow(accumulator.transpose(), cmap='hot', interpolation='nearest')
     fig[1, 0].invert_yaxis()
     fig[1, 1].imshow(img)
     fig[1, 1].set_title("Detected Lines")
     fig[1, 1].axis('off')
-    # plot parameters
-    for _rho in tqdm(rho_values):
-        fig[1, 0].plot(thetas, _rho, color="white", alpha=0.01)
     # plot selected parameters
-    fig[1, 0].plot([theta], [rho], marker='o', color='yellow')
+    fig[1, 0].plot([theta / delta_theta], [rho / delta_rho], marker='o', color='yellow')
     # plot lines
     for _rho, _theta in zip(rho, theta):
         cos_theta = np.cos(np.deg2rad(_theta))
@@ -75,7 +74,7 @@ def line_detection(img, num_rhos=360, num_thetas=360, threshold=0.5, min_count=0
         y1 = int(y0 + diagonal * cos_theta)
         x2 = int(x0 + diagonal * sin_theta)
         y2 = int(y0 - diagonal * cos_theta)
-        # plot line
+        # plot the line
         fig[1, 1].add_line(mlines.Line2D([x1, x2], [y1, y2]))
     plt.show()
 
@@ -193,7 +192,6 @@ def circle_detection(img, threshold=0.5, min_count=0, min_r=30, max_r=200, min_d
 
 
 if __name__ == "__main__":
-    debug = False
     # lines
     line_detection(cv2.imread(f"assets/sample-1.jpg"), threshold=0.60)
     line_detection(cv2.imread(f"assets/sample-2.jpg"), num_rhos=720, num_thetas=720, threshold=0.30)
