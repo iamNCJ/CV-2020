@@ -79,10 +79,20 @@ def line_detection(img, num_rhos=360, num_thetas=360, threshold=0.5, min_count=0
     plt.show()
 
 
-def circle_detection(img, threshold=0.5, min_count=0, min_r=30, max_r=200, min_dis=50, blur=False):
+def circle_detection(img, threshold=0.5, min_count=0, min_r=30, max_r=200, min_dis=50, blur=False, flood=False):
     print("Preprocessing image...")
     edge_image = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     edge_image = cv2.bilateralFilter(edge_image, 90, 75, 150)
+    if flood:
+        _threshold, edge_image = cv2.threshold(edge_image, 128, 192, cv2.THRESH_OTSU)
+        edge_image = np.uint8((edge_image > _threshold) * 255)
+        h, w = edge_image.shape[:2]
+        edge_image = cv2.bitwise_not(edge_image)
+        temp_image = edge_image.copy()
+        cv2.floodFill(temp_image, np.zeros((h+2, w+2), np.uint8), (0, 0), 255)
+        im_floodfill_inv = cv2.bitwise_not(temp_image)
+        im_out = edge_image | im_floodfill_inv
+        edge_image = im_out
     if blur:
         edge_image = cv2.medianBlur(edge_image, 9)
         _threshold, edge_image = cv2.threshold(edge_image, 128, 192, cv2.THRESH_OTSU)
@@ -96,6 +106,8 @@ def circle_detection(img, threshold=0.5, min_count=0, min_r=30, max_r=200, min_d
         edge_image = cv2.dilate(edge_image, cv2.getStructuringElement(cv2.MORPH_RECT, (2, 2)), iterations=1)
         edge_image = cv2.erode(edge_image, cv2.getStructuringElement(cv2.MORPH_RECT, (2, 2)), iterations=1)
     edge_image = cv2.Canny(edge_image, 50, 150, apertureSize=3, L2gradient=True)
+    if flood:
+        edge_image = cv2.dilate(edge_image, cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5)), iterations=1)
     if blur:
         edge_image = cv2.dilate(edge_image, cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3)), iterations=1)
 
@@ -193,12 +205,12 @@ def circle_detection(img, threshold=0.5, min_count=0, min_r=30, max_r=200, min_d
 
 if __name__ == "__main__":
     # lines
-    line_detection(cv2.imread(f"assets/sample-1.jpg"), threshold=0.60)
-    line_detection(cv2.imread(f"assets/sample-2.jpg"), num_rhos=720, num_thetas=720, threshold=0.30)
-    line_detection(cv2.imread(f"assets/sample-3.jpg"), min_count=200)
+    # line_detection(cv2.imread(f"assets/sample-1.jpg"), threshold=0.60)
+    # line_detection(cv2.imread(f"assets/sample-2.jpg"), num_rhos=720, num_thetas=720, threshold=0.30)
+    # line_detection(cv2.imread(f"assets/sample-3.jpg"), min_count=200)
 
     # circles
-    circle_detection(cv2.imread(f"assets/sample-4.jpg"), threshold=0.47, min_r=36, max_r=50)
-    circle_detection(cv2.imread(f"assets/sample-1.jpg"), threshold=0.20, min_r=25, max_r=140, min_dis=100, blur=True)
-    circle_detection(cv2.imread(f"assets/sample-2.jpg"), threshold=0.90)
-    circle_detection(cv2.imread(f"assets/sample-3.jpg"), threshold=0.10, min_r=2, max_r=80)
+    # circle_detection(cv2.imread(f"assets/sample-4.jpg"), threshold=0.47, min_r=36, max_r=50)
+    circle_detection(cv2.imread(f"assets/sample-1.jpg"), threshold=0.10, min_r=25, max_r=130, min_dis=200, flood=True)
+    # circle_detection(cv2.imread(f"assets/sample-2.jpg"), threshold=0.90)
+    # circle_detection(cv2.imread(f"assets/sample-3.jpg"), threshold=0.10, min_r=2, max_r=80)
