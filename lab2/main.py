@@ -200,7 +200,7 @@ if __name__ == "__main__":
     line_detection(cv2.imread(f"assets/sample-3.jpg"), min_count=200)
 
     # circles
-    circle_detection(cv2.imread(f"assets/sample-8.jpg"), threshold=0.47, min_r=36, max_r=50)
+    circle_detection(cv2.imread(f"assets/sample-4.jpg"), threshold=0.47, min_r=36, max_r=50)
     circle_detection(cv2.imread(f"assets/sample-1.jpg"), threshold=0.20, min_r=25, max_r=140, min_dis=100, blur=True)
     circle_detection(cv2.imread(f"assets/sample-2.jpg"), threshold=0.90)
     circle_detection(cv2.imread(f"assets/sample-3.jpg"), threshold=0.10, min_r=2, max_r=80)
