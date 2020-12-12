@@ -28,7 +28,7 @@ def line_detection(img, num_rhos=360, num_thetas=360, threshold=0.5, min_count=0
     cos_thetas = np.cos(np.deg2rad(thetas))
     sin_thetas = np.sin(np.deg2rad(thetas))
 
-    # Filling
+    # Voting
     # normalization
     edge_points = np.argwhere(edge_image != 0) - np.array([[height / 2, width / 2]])
     # rho = x * cos(theta) + y * sin(theta)
@@ -104,17 +104,17 @@ def circle_detection(img, threshold=0.5, min_count=0, min_r=30, max_r=200, min_d
     angle_deg = (270 - angle_deg % 180) % 180
     angle = np.deg2rad(angle_deg)
 
-    # Filling
-    # normalization
+    # Voting
     edge_points = np.argwhere(edge_image != 0)
-    # b = r * cos(theta) + y
     radius = np.append(np.arange(-max_r, min_r), np.arange(min_r, max_r))
-    b_values = np.matmul(np.append(radius.reshape((radius.shape[0], 1)), np.ones((radius.shape[0], 1)), axis=1),
-                         np.vstack((np.cos(angle[edge_points.T[0], edge_points.T[1]]).reshape(1, edge_points.shape[0]),
-                                    edge_points.T[0].reshape(edge_points.shape[0])))).transpose()
+    # a = r * sin(theta) + x
     a_values = np.matmul(np.append(radius.reshape((radius.shape[0], 1)), np.ones((radius.shape[0], 1)), axis=1),
                          np.vstack((np.sin(angle[edge_points.T[0], edge_points.T[1]]).reshape(1, edge_points.shape[0]),
                                     edge_points.T[1].reshape(edge_points.shape[0])))).transpose()
+    # b = r * cos(theta) + y
+    b_values = np.matmul(np.append(radius.reshape((radius.shape[0], 1)), np.ones((radius.shape[0], 1)), axis=1),
+                         np.vstack((np.cos(angle[edge_points.T[0], edge_points.T[1]]).reshape(1, edge_points.shape[0]),
+                                    edge_points.T[0].reshape(edge_points.shape[0])))).transpose()
     # filling the accumulator with np.histogram2d()
     accumulator, _, _ = np.histogram2d(a_values.reshape(-1), b_values.reshape(-1), bins=[np.arange(0, width), np.arange(0, height)])
     auto_threshold = np.max([min_count, np.max(accumulator) * threshold])
@@ -125,7 +125,6 @@ def circle_detection(img, threshold=0.5, min_count=0, min_r=30, max_r=200, min_d
     voted_centers = np.argwhere(accumulator > auto_threshold)
     local_centers = np.empty((0, 3), int)
     for a, b in tqdm(voted_centers):
-        _accumulator = np.zeros(max_r)
         x0 = max(0, a - 1)
         x1 = min(width, a + 1)
         y0 = max(0, b - 1)
