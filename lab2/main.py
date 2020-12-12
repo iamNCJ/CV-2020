@@ -80,18 +80,25 @@ def line_detection(img, num_rhos=360, num_thetas=360, threshold=0.5, min_count=0
     plt.show()
 
 
-def circle_detection(img, threshold=0.5, min_count=0, min_r=30, max_r=200, min_dis=50):
-    def _debug():
-        if debug:
-            cv2.imshow('res', edge_image)
-            cv2.waitKey(-1)
+def circle_detection(img, threshold=0.5, min_count=0, min_r=30, max_r=200, min_dis=50, blur=False):
     print("Preprocessing image...")
     edge_image = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    _debug()
     edge_image = cv2.bilateralFilter(edge_image, 90, 75, 150)
-    _debug()
+    if blur:
+        edge_image = cv2.medianBlur(edge_image, 9)
+        _threshold, edge_image = cv2.threshold(edge_image, 128, 192, cv2.THRESH_OTSU)
+        edge_image = np.uint8((edge_image > _threshold) * 255)
+        edge_image = cv2.dilate(edge_image, cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3)), iterations=1)
+        edge_image = cv2.erode(edge_image, cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3)), iterations=1)
+        edge_image = cv2.dilate(edge_image, cv2.getStructuringElement(cv2.MORPH_RECT, (4, 4)), iterations=1)
+        edge_image = cv2.erode(edge_image, cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3)), iterations=1)
+        edge_image = cv2.dilate(edge_image, cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3)), iterations=1)
+        edge_image = cv2.erode(edge_image, cv2.getStructuringElement(cv2.MORPH_RECT, (2, 2)), iterations=1)
+        edge_image = cv2.dilate(edge_image, cv2.getStructuringElement(cv2.MORPH_RECT, (2, 2)), iterations=1)
+        edge_image = cv2.erode(edge_image, cv2.getStructuringElement(cv2.MORPH_RECT, (2, 2)), iterations=1)
     edge_image = cv2.Canny(edge_image, 50, 150, apertureSize=3, L2gradient=True)
-    _debug()
+    if blur:
+        edge_image = cv2.dilate(edge_image, cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3)), iterations=1)
 
     # Quantify parameter space
     height, width = edge_image.shape[:2]
@@ -100,20 +107,10 @@ def circle_detection(img, threshold=0.5, min_count=0, min_r=30, max_r=200, min_d
     _, angle_deg = cv2.cartToPolar(grad_x, grad_y, angleInDegrees=True)
     angle_deg = (270 - angle_deg % 180) % 180
     angle = np.deg2rad(angle_deg)
-    # (a, b): circle center
-    _as = np.arange(0, width)
-    _bs = np.arange(0, height)
 
     # Filling
     # normalization
     edge_points = np.argwhere(edge_image != 0)
-    # angles = [angle[tuple(x)] for x in edge_points]
-    tans = np.tan(angle[edge_points.T[0], edge_points.T[1]])
-    cos_s = np.cos(angle[edge_points.T[0], edge_points.T[1]])
-    # # b = a * tan(theta) - x * tan(theta) + y
-    # b_values = np.matmul(np.append(_as.reshape((_as.shape[0], 1)), np.ones((_as.shape[0], 1)), axis=1),
-    #                      np.vstack((tans.reshape(1, tans.shape[0]),
-    #                                 (-edge_points.T[1] * tans + edge_points.T[0]).reshape(tans.shape[0])))).transpose()
     # b = r * cos(theta) + y
     radius = np.append(np.arange(-max_r, min_r), np.arange(min_r, max_r))
     b_values = np.matmul(np.append(radius.reshape((radius.shape[0], 1)), np.ones((radius.shape[0], 1)), axis=1),
@@ -122,9 +119,8 @@ def circle_detection(img, threshold=0.5, min_count=0, min_r=30, max_r=200, min_d
     a_values = np.matmul(np.append(radius.reshape((radius.shape[0], 1)), np.ones((radius.shape[0], 1)), axis=1),
                          np.vstack((np.sin(angle[edge_points.T[0], edge_points.T[1]]).reshape(1, edge_points.shape[0]),
                                     edge_points.T[1].reshape(edge_points.shape[0])))).transpose()
-
     # filling the accumulator with np.histogram2d()
-    accumulator, _, _ = np.histogram2d(a_values.reshape(-1), b_values.reshape(-1), bins=[_as, _bs])
+    accumulator, _, _ = np.histogram2d(a_values.reshape(-1), b_values.reshape(-1), bins=[np.arange(0, width), np.arange(0, height)])
     auto_threshold = np.max([min_count, np.max(accumulator) * threshold])
 
     # Results
@@ -158,8 +154,10 @@ def circle_detection(img, threshold=0.5, min_count=0, min_r=30, max_r=200, min_d
             real_centers.append((a, b, radius))
     real_centers = np.array(real_centers)
 
-    print('Remove=ing overlaps...')
+    print('Removing overlaps...')
     try:
+        if blur:
+            real_centers = real_centers[np.lexsort(np.transpose(real_centers))][::-1]
         final_centers = np.array([real_centers[0]])
         for a, b, r in tqdm(real_centers[1:]):
             distances = np.sqrt(np.sum(np.square(final_centers[:, [0, 1]] - (a, b)), axis=1))
@@ -171,7 +169,7 @@ def circle_detection(img, threshold=0.5, min_count=0, min_r=30, max_r=200, min_d
 
     # Visualization
     # 4 subplots
-    print("Plotting in hough space...")
+    print("Plotting...")
     _, fig = plt.subplots(2, 2)
     fig[0, 0].imshow(img)
     fig[0, 0].set_title("Original Image")
@@ -179,27 +177,31 @@ def circle_detection(img, threshold=0.5, min_count=0, min_r=30, max_r=200, min_d
     fig[0, 1].imshow(edge_image, cmap="gray")
     fig[0, 1].set_title("Edge Image")
     fig[0, 1].axis('off')
-    fig[1, 0].set_facecolor((0, 0, 0))
-    fig[1, 0].set_title("Hough Space")
-    fig[1, 0].invert_yaxis()
+    # fig[1, 0].set_facecolor((0, 0, 0))
+    # plot parameters
+    fig[1, 0].set_title("Hough Space (a, b)")
+    fig[1, 0].imshow(accumulator.transpose(), cmap='hot', interpolation='nearest')
+    # fig[1, 0].invert_yaxis()
     fig[1, 1].imshow(img)
     fig[1, 1].set_title("Detected Circles")
     fig[1, 1].axis('off')
-    # plot parameters
-    fig[1, 0].imshow(accumulator.transpose(), cmap='hot', interpolation='nearest')
     # plot circles
     for a, b, r in tqdm(final_centers):
         fig[1, 1].add_patch(Circle((a, b), r, fill=False, color='green'))
-        fig[1, 1].plot([a], [b], marker='o', color='blue')
+        fig[1, 1].plot([a], [b], marker='o', color='yellow')
+        fig[1, 0].plot([a], [b], marker='o', color='yellow')
     plt.show()
 
 
 if __name__ == "__main__":
     debug = False
-    # line_detection(cv2.imread(f"assets/sample-1.jpg"), threshold=0.60) # ok
-    # line_detection(cv2.imread(f"assets/sample-2.jpg"), num_rhos=720, num_thetas=720, threshold=0.30) # ok
-    # line_detection(cv2.imread(f"assets/sample-3.jpg"), min_count=200) # ok
-    # circle_detection(cv2.imread(f"assets/sample-8.jpg"), threshold=0.47, min_r=36, max_r=50) # ok
-    circle_detection(cv2.imread(f"assets/sample-1.jpg"), threshold=0.00, min_r=15, max_r=120, min_dis=100)
-    # circle_detection(cv2.imread(f"assets/sample-2.jpg"), threshold=0.90) # ok
-    # circle_detection(cv2.imread(f"assets/sample-3.jpg"), threshold=0.10, min_r=2, max_r=80) # ok
+    # lines
+    line_detection(cv2.imread(f"assets/sample-1.jpg"), threshold=0.60)
+    line_detection(cv2.imread(f"assets/sample-2.jpg"), num_rhos=720, num_thetas=720, threshold=0.30)
+    line_detection(cv2.imread(f"assets/sample-3.jpg"), min_count=200)
+
+    # circles
+    circle_detection(cv2.imread(f"assets/sample-8.jpg"), threshold=0.47, min_r=36, max_r=50)
+    circle_detection(cv2.imread(f"assets/sample-1.jpg"), threshold=0.20, min_r=25, max_r=140, min_dis=100, blur=True)
+    circle_detection(cv2.imread(f"assets/sample-2.jpg"), threshold=0.90)
+    circle_detection(cv2.imread(f"assets/sample-3.jpg"), threshold=0.10, min_r=2, max_r=80)
