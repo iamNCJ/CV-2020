@@ -173,7 +173,6 @@ def circle_detection(img, threshold=0.5, min_count=0, min_r=30, max_r=200, min_d
     # plot parameters
     fig[1, 0].set_title("Hough Space")
     fig[1, 0].imshow(accumulator.transpose(), cmap='hot', interpolation='nearest')
-    # fig[1, 0].invert_yaxis()
     fig[1, 1].imshow(img)
     fig[1, 1].set_title("Detected Circles")
     fig[1, 1].axis('off')
