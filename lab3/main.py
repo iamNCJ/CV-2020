@@ -1,16 +1,34 @@
-# This is a sample Python script.
+import cv2
+import numpy as np
+import time
 
-# Press ⌃R to execute it or replace it with your code.
-# Press Double ⇧ to search everywhere for classes, files, tool windows, actions, and settings.
+cam = cv2.VideoCapture(0)
 
+while True:
+    start = time.time()
+    # Capture frame-by-frame
+    _, img = cam.read()
 
-def print_hi(name):
-    # Use a breakpoint in the code line below to debug your script.
-    print(f'Hi, {name}')  # Press ⌘F8 to toggle the breakpoint.
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
+    gray = np.float32(gray)
+    dst = cv2.cornerHarris(gray, 2, 3, 0.04)
 
-# Press the green button in the gutter to run the script.
-if __name__ == '__main__':
-    print_hi('PyCharm')
+    # result is dilated for marking the corners, not important
+    dst = cv2.dilate(dst, None)
 
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
+    # Threshold for an optimal value, it may vary depending on the image.
+    img[dst > 0.01 * dst.max()] = [0, 0, 255]
+
+    stop = time.time()
+    fps = 1 / (stop - start)
+    frame = cv2.putText(img, f'{int(fps)}', (0, 50), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 255, 255), thickness=2)
+
+    # Display the resulting frame
+    cv2.imshow('frame', frame)
+    if cv2.waitKey(1) & 0xFF == ord('q'):
+        break
+
+# When everything done, release the capture
+cam.release()
+cv2.destroyAllWindows()
