@@ -72,8 +72,6 @@ while True:
 
         plt.show()
 
-        cv2.imshow('frame', img)
-
         while cv2.waitKey(-1) != 32:
             pass
 
