@@ -1,8 +1,9 @@
 import cv2
+from tqdm import tqdm
 import numpy as np
 import matplotlib.pyplot as plt
 
-cam = cv2.VideoCapture(1)
+cam = cv2.VideoCapture(0)
 cnt = 0
 while True:
     # Capture frame-by-frame
@@ -35,10 +36,11 @@ while True:
     dst = cv2.dilate(dst, None)
 
     # Threshold for an optimal value, it may vary depending on the image.
-    img[dst > 0.01 * dst.max()] = [0, 0, 255]
+    tmp = img.copy()
+    tmp[dst > 0.01 * dst.max()] = [0, 0, 255]
 
     # Display the resulting frame
-    cv2.imshow('frame', img)
+    cv2.imshow('frame', tmp)
 
     if cv2.waitKey(1) == 32:
         h, w = gray.shape
@@ -48,29 +50,50 @@ while True:
         temp[:, :, 1, 0] = Sxy
         temp[:, :, 1, 1] = Syy
 
-        w, _ = np.linalg.eig(temp)
-        lambda1 = w[:, :, 0]
-        lambda2 = w[:, :, 1]
+        eigen, _ = np.linalg.eig(temp)
+        lambda1 = eigen[:, :, 0]
+        lambda2 = eigen[:, :, 1]
 
         lambda_max = np.maximum(lambda1, lambda2)
         lambda_min = np.minimum(lambda1, lambda2)
 
-        _, fig = plt.subplots(2, 2)
+        # NMS
+        pos = np.argwhere(R > 0.01 * R.max())
+        for a, b in tqdm(pos):
+            x0 = max(0, a - 1)
+            x1 = min(h, a + 1)
+            y0 = max(0, b - 1)
+            y1 = min(w, b + 1)
+            if R[a, b] == np.max(R[x0:x1, y0:y1]):
+                cv2.drawMarker(img, (b, a), (0, 0, 255))
 
-        fig[0, 0].imshow(lambda_max, cmap='hot', interpolation='nearest')
-        fig[0, 0].set_title(r'$\lambda_{max}$')
-        fig[0, 0].axis('off')
-        fig[1, 0].set_title(r'$\lambda_{min}$')
-        fig[1, 0].imshow(lambda_min, cmap='hot', interpolation='nearest')
-        fig[1, 0].axis('off')
-        fig[0, 1].imshow(R, cmap='hot', interpolation='nearest')
-        fig[0, 1].set_title(r"$R$")
-        fig[0, 1].axis('off')
-        fig[1, 1].imshow(cv2.cvtColor(img, cv2.COLOR_RGB2BGR))
-        fig[1, 1].set_title("Result")
-        fig[1, 1].axis('off')
+        fig, subplots = plt.subplots(2, 2)
+        subplots[0, 0].imshow(lambda_max, cmap='hot', interpolation='nearest')
+        subplots[0, 0].set_title(r'$\lambda_{max}$')
+        subplots[0, 0].axis('off')
+        subplots[1, 0].set_title(r'$\lambda_{min}$')
+        subplots[1, 0].imshow(lambda_min, cmap='hot', interpolation='nearest')
+        subplots[1, 0].axis('off')
+        subplots[0, 1].imshow(R, cmap='hot', interpolation='nearest')
+        subplots[0, 1].set_title(r"$R$")
+        subplots[0, 1].axis('off')
+        subplots[1, 1].imshow(cv2.cvtColor(img, cv2.COLOR_RGB2BGR))
+        subplots[1, 1].set_title("Result")
+        subplots[1, 1].axis('off')
 
-        plt.show()
+        # plt.show()
+
+        # redraw the canvas
+        fig.canvas.draw()
+
+        # convert canvas to image
+        img = np.fromstring(fig.canvas.tostring_rgb(), dtype=np.uint8, sep='')
+        img = img.reshape(fig.canvas.get_width_height()[::-1] + (3,))
+
+        # img is rgb, convert to opencv's default bgr
+        img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
+
+        cv2.imshow('frame', img)
 
         while cv2.waitKey(-1) != 32:
             pass
