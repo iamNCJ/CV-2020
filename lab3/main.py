@@ -6,8 +6,8 @@ from tqdm import tqdm
 cam = cv2.VideoCapture(0)
 while True:
     # Capture frame-by-frame
-    _, img = cam.read()
-    # img = cv2.imread('assets/sample.jpg')
+    # _, img = cam.read()
+    img = cv2.imread('assets/sample.jpg')
 
     # Color to grayscale
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -23,13 +23,13 @@ while True:
     Iyy = Iy ** 2
 
     kernel = np.ones((3, 3), np.float32)
-    Sxx = cv2.filter2D(Ixx, -1, kernel)
-    Sxy = cv2.filter2D(Ixy, -1, kernel)
-    Syy = cv2.filter2D(Iyy, -1, kernel)
+    Sum_xx = cv2.filter2D(Ixx, -1, kernel)
+    Sum_xy = cv2.filter2D(Ixy, -1, kernel)
+    Sum_yy = cv2.filter2D(Iyy, -1, kernel)
 
     # Harris response calculation
     k = 0.04
-    R = Sxx * Syy - Sxy ** 2 - k * (Sxx + Syy) ** 2
+    R = Sum_xx * Sum_yy - Sum_xy ** 2 - k * (Sum_xx + Sum_yy) ** 2
 
     dst = R
     # dst = cv2.cornerHarris(gray, 2, 3, 0.04)
@@ -47,10 +47,10 @@ while True:
     if cv2.waitKey(1) == 32:
         h, w = gray.shape
         temp = np.zeros((h, w, 2, 2))
-        temp[:, :, 0, 0] = Sxx
-        temp[:, :, 0, 1] = Sxy
-        temp[:, :, 1, 0] = Sxy
-        temp[:, :, 1, 1] = Syy
+        temp[:, :, 0, 0] = Sum_xx
+        temp[:, :, 0, 1] = Sum_xy
+        temp[:, :, 1, 0] = Sum_xy
+        temp[:, :, 1, 1] = Sum_yy
 
         eigen, _ = np.linalg.eig(temp)
         lambda1 = eigen[:, :, 0]
