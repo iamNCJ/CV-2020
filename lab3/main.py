@@ -6,8 +6,8 @@ from tqdm import tqdm
 cam = cv2.VideoCapture(0)
 while True:
     # Capture frame-by-frame
-    # _, img = cam.read()
-    img = cv2.imread('assets/sample.jpg')
+    _, img = cam.read()
+    # img = cv2.imread('assets/sample.jpg')
 
     # Color to grayscale
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
