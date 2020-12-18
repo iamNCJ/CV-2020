@@ -1,22 +1,23 @@
 import cv2
-from tqdm import tqdm
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
+from tqdm import tqdm
 
 cam = cv2.VideoCapture(0)
-cnt = 0
 while True:
     # Capture frame-by-frame
     _, img = cam.read()
     # img = cv2.imread('assets/sample.jpg')
 
+    # Color to grayscale
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-
     gray = np.float32(gray)
 
+    # Spatial derivative calculation
     Ix = cv2.Sobel(gray, cv2.CV_64F, 1, 0, ksize=5)
     Iy = cv2.Sobel(gray, cv2.CV_64F, 0, 1, ksize=5)
 
+    # Structure tensor setup
     Ixx = Ix ** 2
     Ixy = Ix * Iy
     Iyy = Iy ** 2
@@ -26,6 +27,7 @@ while True:
     Sxy = cv2.filter2D(Ixy, -1, kernel)
     Syy = cv2.filter2D(Iyy, -1, kernel)
 
+    # Harris response calculation
     k = 0.04
     R = Sxx * Syy - Sxy ** 2 - k * (Sxx + Syy) ** 2
 
@@ -57,7 +59,7 @@ while True:
         lambda_max = np.maximum(lambda1, lambda2)
         lambda_min = np.minimum(lambda1, lambda2)
 
-        # NMS
+        # Non-maximum suppression
         pos = np.argwhere(R > 0.01 * R.max())
         for a, b in tqdm(pos):
             x0 = max(0, a - 1)
@@ -81,8 +83,6 @@ while True:
         subplots[1, 1].set_title("Result")
         subplots[1, 1].axis('off')
 
-        # plt.show()
-
         # redraw the canvas
         fig.canvas.draw()
 
@@ -95,8 +95,18 @@ while True:
 
         cv2.imshow('frame', img)
 
-        while cv2.waitKey(-1) != 32:
-            pass
+        flag = False
+        while True:
+            char = cv2.waitKey(-1)
+            if char == 32:
+                break
+            elif char == ord('s'):
+                fig.savefig('harris.png')
+            elif char == ord('q'):
+                flag = True
+                break
+        if flag:
+            break
 
 # When everything done, release the capture
 cam.release()
