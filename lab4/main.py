@@ -21,7 +21,7 @@ def pca(X, n_pc):
     centered_data = X - mean
     U, S, V = np.linalg.svd(centered_data)
     components = V[:n_pc]
-    projected = U[:, :n_pc] * S[:n_pc]
+    projected = X.dot(components.T)  # U[:, :n_pc] * S[:n_pc]
     return projected, components, mean, centered_data
 
 

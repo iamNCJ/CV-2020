@@ -13,7 +13,7 @@ def pca(X, energy):
     accumulator = np.cumsum(s / sum(s))
     n_pc = np.argwhere(accumulator > energy)[0][0] + 1
     _components = vh[:n_pc]
-    _projected = u[:, :n_pc] * s[:n_pc]
+    _projected = X.dot(_components.T)
     return _projected, _components, _mean, _centered_data
 
 
@@ -47,6 +47,7 @@ if __name__ == '__main__':
     print(f'Using {components.shape[0]} principal components')
 
     with open(args.model_file, 'wb') as f:
+        np.save(f, args.size)
         np.save(f, projected)
         np.save(f, components)
         np.save(f, mean)
