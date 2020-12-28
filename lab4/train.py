@@ -3,6 +3,7 @@ import os
 
 import cv2
 import numpy as np
+import matplotlib.pyplot as plt
 
 
 def pca(X, energy):
@@ -16,11 +17,15 @@ def pca(X, energy):
     return _projected, _components, _mean, _centered_data
 
 
-def reconstruction(Y, C, M, h, w, image_index):
-    weights = np.dot(Y, C.T)
-    centered_vector = np.dot(weights[image_index, :], C)
-    recovered_image = (M + centered_vector).reshape(h, w)
-    return recovered_image
+def plot(images, counts, row, col):
+    plt.figure()
+    assert row * col >= counts
+    for i in range(counts):
+        plt.subplot(row, col, i + 1)
+        plt.imshow(images[i], cmap='gray')
+        plt.xticks(())
+        plt.yticks(())
+    plt.show()
 
 
 if __name__ == '__main__':
@@ -31,6 +36,7 @@ if __name__ == '__main__':
     arg_parser.add_argument('--resize', dest='size', type=int, default=64)
     args = arg_parser.parse_args()
     print(f'Start training with arguments {args}')
+    assert args.size > 0 and args.energy > 0
 
     training_photos = [args.training_data + '/' + photo for photo in os.listdir(args.training_data)]
     training_data = np.stack([cv2.resize(cv2.imread(image, cv2.COLOR_BGR2GRAY), (args.size, args.size)) for image in training_photos])
@@ -47,7 +53,5 @@ if __name__ == '__main__':
         np.save(f, centered_data)
     print(f'Saving model to {args.model_file}')
 
-    # with open(args.model_file, 'rb') as f:
-    #     a = np.load(f)
-    #     b = np.load(f)
-    # print(a)
+    # Show 10 pcs
+    plot(components.reshape(components.shape[0], h, w), 10, 3, 4)
