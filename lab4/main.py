@@ -34,7 +34,7 @@ def reconstruction(Y, C, M, h, w, image_index):
 
 if __name__ == '__main__':
     dir = 'data/JAFFE'
-    celebrity_photos = os.listdir(dir)[1:1001]
+    celebrity_photos = os.listdir(dir)[0:1001]
     celebrity_images = [dir + '/' + photo for photo in celebrity_photos]
     images = np.stack([cv2.resize(cv2.imread(image, cv2.COLOR_BGR2GRAY), (64, 64)) for image in celebrity_images])
     n_samples, h, w = images.shape
@@ -43,7 +43,7 @@ if __name__ == '__main__':
     plt.imshow(mean, cmap='gray')
     plt.show()
 
-    n_components = 50
+    n_components = 100
     X = images.reshape(n_samples, h * w)
     P, C, M, Y = pca(X, n_pc=n_components)
     eigenfaces = C.reshape((n_components, h, w))
