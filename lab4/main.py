@@ -3,8 +3,8 @@ import numpy as np
 import os
 import matplotlib.pyplot as plt
 from tqdm import tqdm
+import argparse
 
-"""It helps visualising the portraits from the dataset."""
 def plot_portraits(images, h, w, n_row, n_col):
     plt.figure(figsize=(2.2 * n_col, 2.2 * n_row))
     plt.subplots_adjust(bottom=0, left=.01, right=.99, top=.90, hspace=.20)
