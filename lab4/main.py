@@ -49,15 +49,5 @@ if __name__ == '__main__':
     eigenfaces = C.reshape((n_components, h, w))
     plot_portraits(eigenfaces, h, w, n_row=4, n_col=4)
 
-    # for face in tqdm(eigenfaces):
-    #     plt.imshow(face, cmap='gray')
-    #     plt.show()
-
     recovered_images = [reconstruction(Y, C, M, h, w, i) for i in range(len(images))]
     plot_portraits(recovered_images, h, w, n_row=4, n_col=4)
-
-    # for recovered_image in tqdm(recovered_images):
-    #     plt.imshow(recovered_image, cmap='gray')
-    #     plt.show()
-
-    # plot_portraits(recovered_images, celebrity_names, h, w, n_row=4, n_col=4)
