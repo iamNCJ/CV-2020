@@ -13,7 +13,8 @@ def pca(X, energy):
     accumulator = np.cumsum(s / sum(s))
     n_pc = np.argwhere(accumulator >= energy)[0][0] + 1
     _components = vh[:n_pc]
-    _projected = X.dot(_components.T)
+    _components = _components / np.linalg.norm(_components, axis=1)[:, None]
+    _projected = _centered_data.dot(_components.T)
     return _projected, _components, _mean, _centered_data
 
 
@@ -53,7 +54,6 @@ if __name__ == '__main__':
         np.save(f, components)
         np.save(f, mean)
         np.save(f, centered_data)
-        np.save(f, training_data)
     print(f'Saving model to {args.model_file}')
 
     if not args.headless:

@@ -1,9 +1,7 @@
 import argparse
-
 import numpy as np
 import cv2
 import matplotlib.pyplot as plt
-
 
 def plot(images, counts, row, col):
     plt.figure()
@@ -16,16 +14,8 @@ def plot(images, counts, row, col):
     plt.show()
 
 
-def reconstruction(image, pc, _mean, _size, n_pc):
-    pc = pc[:][:n_pc]
-    project_vector = (image - _mean).dot(pc.T)
-    centered_vector = np.dot(project_vector, pc)
-    recovered_image = (_mean + centered_vector).reshape(_size, _size)
-    return recovered_image
-
-
 if __name__ == '__main__':
-    arg_parser = argparse.ArgumentParser(description='My eigen-face reconstructor')
+    arg_parser = argparse.ArgumentParser(description='My eigen-face tester')
     arg_parser.add_argument('--input', dest='input_image', type=str, required=False, default='./data/img.png')
     arg_parser.add_argument('--model', dest='model_file', type=str, default='model.npy')
     args = arg_parser.parse_args()
@@ -38,8 +28,10 @@ if __name__ == '__main__':
         mean = np.load(f)
         centered_data = np.load(f)
 
-    cv2.imshow('', cv2.cvtColor(cv2.imread(args.input_image), cv2.COLOR_BGR2GRAY))
-    cv2.waitKey(-1)
     input_image = cv2.resize(cv2.cvtColor(cv2.imread(args.input_image), cv2.COLOR_BGR2GRAY), (size, size)).reshape(-1)
-    rec_images = [reconstruction(input_image, components, mean, size, num_pc) for num_pc in (10, 25, 50, 100, 150, components.shape[0])]
-    plot(rec_images, 6, 2, 3)
+    project_vector = (input_image - mean).dot(components.T)
+    distances = np.sum((projected - project_vector) ** 2, axis=1)
+    idx = np.argmin(distances)
+    nearest_img = (centered_data[idx] + mean).reshape(size, size)
+    detected_img = (nearest_img + input_image.reshape(size, size)) / 2
+    plot([input_image.reshape(size, size), nearest_img, detected_img], 3, 1, 3)
