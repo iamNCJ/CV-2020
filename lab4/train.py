@@ -11,7 +11,7 @@ def pca(X, energy):
     _centered_data = X - _mean
     u, s, vh = np.linalg.svd(_centered_data)
     accumulator = np.cumsum(s / sum(s))
-    n_pc = np.argwhere(accumulator > energy)[0][0] + 1
+    n_pc = np.argwhere(accumulator >= energy)[0][0] + 1
     _components = vh[:n_pc]
     _projected = X.dot(_components.T)
     return _projected, _components, _mean, _centered_data
@@ -34,6 +34,7 @@ if __name__ == '__main__':
     arg_parser.add_argument('--model', dest='model_file', type=str, default='model.npy')
     arg_parser.add_argument('--data', dest='training_data', type=str, default='./data/JAFFE')
     arg_parser.add_argument('--resize', dest='size', type=int, default=64)
+    arg_parser.add_argument("--headless", dest="headless", action="store_true", default=False, required=False, help="Train in headless mode")
     args = arg_parser.parse_args()
     print(f'Start training with arguments {args}')
     assert args.size > 0 and args.energy > 0
@@ -52,7 +53,12 @@ if __name__ == '__main__':
         np.save(f, components)
         np.save(f, mean)
         np.save(f, centered_data)
+        np.save(f, training_data)
     print(f'Saving model to {args.model_file}')
 
-    # Show 10 pcs
-    plot(components.reshape(components.shape[0], h, w), 10, 3, 4)
+    if not args.headless:
+        # Show mean face
+        plt.imshow(mean.reshape((args.size, args.size)), cmap='gray')
+        plt.show()
+        # Show 10 pcs
+        plot(components.reshape(components.shape[0], h, w), 10, 3, 4)
