@@ -1,18 +1,9 @@
 import argparse
-import numpy as np
+
 import cv2
-import matplotlib.pyplot as plt
+import numpy as np
 
-def plot(images, counts, row, col):
-    plt.figure()
-    assert row * col >= counts
-    for i in range(counts):
-        plt.subplot(row, col, i + 1)
-        plt.imshow(images[i], cmap='gray')
-        plt.xticks(())
-        plt.yticks(())
-    plt.show()
-
+from utils import plot, load_model
 
 if __name__ == '__main__':
     arg_parser = argparse.ArgumentParser(description='My eigen-face tester')
@@ -21,12 +12,7 @@ if __name__ == '__main__':
     args = arg_parser.parse_args()
 
     # Reload model
-    with open(args.model_file, 'rb') as f:
-        size = np.load(f)
-        projected = np.load(f)
-        components = np.load(f)
-        mean = np.load(f)
-        centered_data = np.load(f)
+    size, projected, components, mean, centered_data = load_model(args.model_file)
 
     input_image = cv2.resize(cv2.cvtColor(cv2.imread(args.input_image), cv2.COLOR_BGR2GRAY), (size, size)).reshape(-1)
     project_vector = (input_image - mean).dot(components.T)
