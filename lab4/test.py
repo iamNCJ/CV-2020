@@ -12,7 +12,7 @@ if __name__ == '__main__':
     args = arg_parser.parse_args()
 
     # Reload model
-    size, projected, components, mean, centered_data = load_model(args.model_file)
+    size, projected, components, mean, centered_data, labels = load_model(args.model_file)
 
     input_image = cv2.resize(cv2.cvtColor(cv2.imread(args.input_image), cv2.COLOR_BGR2GRAY), (size, size)).reshape(-1)
     project_vector = (input_image - mean).dot(components.T)

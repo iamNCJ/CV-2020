@@ -1,5 +1,4 @@
 import argparse
-import os
 
 import cv2
 import matplotlib.pyplot as plt
@@ -22,9 +21,8 @@ def pca(X, energy):
 
 if __name__ == '__main__':
     arg_parser = argparse.ArgumentParser(description='My eigen-face trainer')
-    arg_parser.add_argument('--energy', dest='energy', type=float, default=0.8)
+    arg_parser.add_argument('--energy', dest='energy', type=float, default=1.0)
     arg_parser.add_argument('--model', dest='model_file', type=str, default='model.npy')
-    arg_parser.add_argument('--data', dest='training_data', type=str, default='./data/JAFFE')
     arg_parser.add_argument('--resize', dest='size', type=int, default=64)
     arg_parser.add_argument("--headless", dest="headless", action="store_true", default=False, required=False,
                             help="Train in headless mode")
@@ -32,16 +30,19 @@ if __name__ == '__main__':
     print(f'Start training with arguments {args}')
     assert args.size > 0 and args.energy > 0
 
-    training_photos = [args.training_data + '/' + photo for photo in os.listdir(args.training_data)]
+    training_photos = [f'./data/processed/{i}/{j}.png' for i in range(1, 42) for j in range(1, 6)]
+    labels = np.array([i for i in range(1, 42) for _ in range(1, 6)])
     training_data = np.stack(
-        [cv2.resize(cv2.imread(image, cv2.COLOR_BGR2GRAY), (args.size, args.size)) for image in training_photos])
+        [cv2.equalizeHist(cv2.resize(cv2.imread(image, cv2.COLOR_BGR2GRAY), (args.size, args.size))) for image in
+         training_photos])
+
     n_samples, h, w = training_data.shape
 
     print('Calculating PCA')
     projected, components, mean, centered_data = pca(training_data.reshape(n_samples, h * w), energy=args.energy)
     print(f'Using {components.shape[0]} principal components')
 
-    save_model(args.model_file, args.size, projected, components, mean, centered_data)
+    save_model(args.model_file, args.size, projected, components, mean, centered_data, labels)
     print(f'Saving model to {args.model_file}')
 
     if not args.headless:

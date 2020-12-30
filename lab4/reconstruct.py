@@ -7,7 +7,7 @@ from utils import plot, load_model
 
 
 def reconstruction(image, pc, _mean, _size, n_pc):
-    pc = pc[:][:n_pc]
+    pc = pc[:n_pc]
     project_vector = (image - _mean).dot(pc.T)
     centered_vector = np.dot(project_vector, pc)
     recovered_image = (_mean + centered_vector).reshape(_size, _size)
@@ -21,7 +21,7 @@ if __name__ == '__main__':
     args = arg_parser.parse_args()
 
     # Reload model
-    size, projected, components, mean, centered_data = load_model(args.model_file)
+    size, projected, components, mean, centered_data, labels = load_model(args.model_file)
 
     cv2.imshow('', cv2.cvtColor(cv2.imread(args.input_image), cv2.COLOR_BGR2GRAY))
     cv2.waitKey(-1)
