@@ -8,7 +8,7 @@ from tqdm import tqdm
 from utils import load_model
 
 if __name__ == '__main__':
-    arg_parser = argparse.ArgumentParser(description='My eigen-face tester')
+    arg_parser = argparse.ArgumentParser(description='My eigen-face batch tester')
     arg_parser.add_argument('--model', dest='model_file', type=str, default='new.npy')
     args = arg_parser.parse_args()
 
