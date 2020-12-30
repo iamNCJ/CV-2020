@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
-def plot(images, counts, row, col):
+def plot(images, counts, row, col, titles):
     plt.figure()
     assert row * col >= counts
     for i in range(counts):
@@ -10,6 +10,7 @@ def plot(images, counts, row, col):
         plt.imshow(images[i], cmap='gray')
         plt.xticks(())
         plt.yticks(())
+        plt.title(titles[i])
     plt.show()
 
 

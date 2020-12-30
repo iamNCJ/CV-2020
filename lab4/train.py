@@ -50,4 +50,4 @@ if __name__ == '__main__':
         plt.imshow(mean.reshape((args.size, args.size)), cmap='gray')
         plt.show()
         # Show 10 pcs
-        plot(components.reshape(components.shape[0], h, w), 10, 3, 4)
+        plot(components.reshape(components.shape[0], h, w), 10, 3, 4, [str(i) for i in range(1, 11)])

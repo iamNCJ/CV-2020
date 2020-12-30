@@ -23,9 +23,10 @@ if __name__ == '__main__':
     # Reload model
     size, projected, components, mean, centered_data, labels = load_model(args.model_file)
 
-    cv2.imshow('', cv2.cvtColor(cv2.imread(args.input_image), cv2.COLOR_BGR2GRAY))
-    cv2.waitKey(-1)
+    # cv2.imshow('', cv2.cvtColor(cv2.imread(args.input_image), cv2.COLOR_BGR2GRAY))
+    # cv2.waitKey(-1)
     input_image = cv2.resize(cv2.cvtColor(cv2.imread(args.input_image), cv2.COLOR_BGR2GRAY), (size, size)).reshape(-1)
-    rec_images = [reconstruction(input_image, components, mean, size, num_pc) for num_pc in
-                  (10, 25, 50, 100, 150, components.shape[0])]
-    plot(rec_images, 6, 2, 3)
+    pcs = (10, 25, 50, 100, 150, 175, 200, components.shape[0])
+    rec_images = [reconstruction(input_image, components, mean, size, num_pc) for num_pc in pcs]
+    rec_images.append(input_image.reshape((size, size)))
+    plot(rec_images, 9, 3, 3, [str(i) for i in pcs] + ['origin'])
