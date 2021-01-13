@@ -36,13 +36,13 @@ class VGGNet(pl.LightningModule):
         self.features = make_layers([64, 'M', 128, 'M', 128, 128, 'M', 256, 256, 'M'])  #VGG8
         self.avgpool = nn.AdaptiveAvgPool2d((7, 7))
         self.classifier = nn.Sequential(
-            nn.Linear(512 * 7 * 7, 4096),
+            nn.Linear(256 * 7 * 7, 1024),
             nn.ReLU(True),
             nn.Dropout(),
-            nn.Linear(4096, 4096),
+            nn.Linear(1024, 1024),
             nn.ReLU(True),
             nn.Dropout(),
-            nn.Linear(4096, 10),
+            nn.Linear(1024, 10),
             nn.LogSoftmax(dim=-1)
         )
 
@@ -88,10 +88,9 @@ if __name__ == '__main__':
     model = VGGNet()
 
     try:
-        trainer = pl.Trainer(gpus=-1, auto_lr_find=True)
+        trainer = pl.Trainer(gpus=-1)
     except pl.utilities.exceptions.MisconfigurationException:
-        trainer = pl.Trainer(gpus=0, auto_lr_find=True, fast_dev_run=True)
+        trainer = pl.Trainer(gpus=0, fast_dev_run=True)
 
-    trainer.tune(model, dm)
     trainer.fit(model, dm)
     trainer.test(datamodule=dm)
