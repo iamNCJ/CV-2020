@@ -32,16 +32,16 @@ class VGGNet(pl.LightningModule):
     def __init__(self, learning_rate=1e-3):
         super().__init__()
         self.learning_rate = learning_rate
-        self.features = make_layers([16, 'M', 32, 'M', 64, 64, 'M', 128, 128, 'M'])  #VGG8
+        self.features = make_layers([16, 'M', 32, 'M', 64, 128, 'M', 128, 128, 'M'])  #VGG8
         self.avgpool = nn.AdaptiveAvgPool2d((7, 7))
         self.classifier = nn.Sequential(
             nn.Linear(128 * 7 * 7, 512),
             nn.ReLU(True),
             nn.Dropout(),
-            nn.Linear(512, 1024),
+            nn.Linear(512, 512),
             nn.ReLU(True),
             nn.Dropout(),
-            nn.Linear(1024, 10),
+            nn.Linear(512, 10),
             nn.LogSoftmax(dim=-1)
         )
 
