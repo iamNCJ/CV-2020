@@ -4,6 +4,8 @@ import pytorch_lightning as pl
 import torch
 import torch.nn.functional as F
 from pytorch_lightning.metrics import functional as FM
+from pytorch_lightning.callbacks import ModelCheckpoint
+
 from torch import nn
 
 from DataModule import DataModule
@@ -28,10 +30,12 @@ def make_layers(cfg: List[Union[str, int]], batch_norm: bool = False) -> nn.Sequ
 
 
 class VGGNet(pl.LightningModule):
-    def __init__(self):
+    def __init__(self, learning_rate=1e-3):
         super().__init__()
-        self.features = make_layers([64, 'M', 128, 'M', 256, 256, 'M', 512, 512, 'M'])  #VGG8
-        # make_layers([64, 64, 'M', 128, 128, 'M', 256, 256, 256, 256, 'M', 512, 512, 512, 512, 'M', 512, 512, 512, 512, 'M'], True)  # VGG19
+        self.learning_rate = learning_rate
+        self.features = make_layers(
+            [64, 64, 'M', 128, 128, 'M', 256, 256, 256, 256, 'M', 512, 512, 512, 512, 'M', 512, 512, 512, 512, 'M'],
+            True)  # VGG19
         self.avgpool = nn.AdaptiveAvgPool2d((7, 7))
         self.classifier = nn.Sequential(
             nn.Linear(512 * 7 * 7, 4096),
@@ -77,16 +81,19 @@ class VGGNet(pl.LightningModule):
         return loss
 
     def configure_optimizers(self):
-        optimizer = torch.optim.Adam(self.parameters(), lr=1e-3)
+        optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate)
         return optimizer
 
 
 if __name__ == '__main__':
     dm = DataModule(CIFAR10)
-    LeNet = VGGNet()
+    model = VGGNet()
+
     try:
-        trainer = pl.Trainer(gpus=-1)
+        trainer = pl.Trainer(gpus=-1, auto_lr_find=True)
     except pl.utilities.exceptions.MisconfigurationException:
-        trainer = pl.Trainer(gpus=0)
-    trainer.fit(LeNet, dm)
+        trainer = pl.Trainer(gpus=0, auto_lr_find=True, fast_dev_run=True)
+
+    trainer.tune(model, dm)
+    trainer.fit(model, dm)
     trainer.test(datamodule=dm)
