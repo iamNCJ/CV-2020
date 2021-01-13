@@ -12,18 +12,24 @@ class LeNet5(pl.LightningModule):
     def __init__(self):
         super().__init__()
         self.network = nn.Sequential(
-            nn.Conv2d(1, 6, 5, padding=2),  # Layer C1 is a convolution layer with six convolution kernels of 5x5
+            # Layer C1 is a convolution layer with six convolution kernels of 5x5
+            nn.Conv2d(1, 6, 5, padding=2),
             nn.ReLU(),
-            nn.MaxPool2d(2, stride=2),
             # Layer S2 is the subsampling/pooling layer that outputs 6 feature graphs of size 14x14
-            nn.Conv2d(6, 16, 5),  # Layer C3 is a convolution layer with 16 5-5 convolution kernels
-            nn.ReLU(),
             nn.MaxPool2d(2, stride=2),
+            # Layer C3 is a convolution layer with 16 5-5 convolution kernels
+            nn.Conv2d(6, 16, 5),
+            nn.ReLU(),
+            # Layer S4 is similar to S2, with size of 2x2 and output of 16 5x5 feature graphs
+            nn.MaxPool2d(2, stride=2),
+            # Layer C5 is a convolution layer with 120 convolution kernels of size 5x5
             nn.Conv2d(16, 120, 5, padding=2),
             nn.ReLU(),
             nn.Flatten(),
+            # F6 layer is fully connected to C5, and 84 feature graphs are output
             nn.Linear(3000, 84),
             nn.ReLU(),
+            # Output
             nn.Linear(84, 10),
             nn.LogSoftmax(dim=-1)
         )
