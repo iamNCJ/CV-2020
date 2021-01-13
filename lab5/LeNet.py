@@ -10,7 +10,7 @@ from torchvision.datasets import MNIST
 class LeNet5(pl.LightningModule):
     def __init__(self):
         super().__init__()
-        self.network = nn.Sequential(
+        self.features = nn.Sequential(
             # Layer C1 is a convolution layer with six convolution kernels of 5x5
             nn.Conv2d(1, 6, 5, padding=2),
             nn.ReLU(),
@@ -24,7 +24,8 @@ class LeNet5(pl.LightningModule):
             # Layer C5 is a convolution layer with 120 convolution kernels of size 5x5
             nn.Conv2d(16, 120, 5, padding=2),
             nn.ReLU(),
-            nn.Flatten(),
+        )
+        self.classifier = nn.Sequential(
             # F6 layer is fully connected to C5, and 84 feature graphs are output
             nn.Linear(3000, 84),
             nn.ReLU(),
@@ -35,8 +36,10 @@ class LeNet5(pl.LightningModule):
 
     def forward(self, x):
         # in lightning, forward defines the prediction/inference actions
-        result = self.network(x)
-        return result
+        x = self.features(x)
+        x = torch.flatten(x, 1)
+        x = self.classifier(x)
+        return x
 
     def compute(self, batch, batch_idx):
         x, y = batch
