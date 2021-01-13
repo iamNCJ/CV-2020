@@ -6,6 +6,7 @@ from torch import nn
 
 from DataModule import DataModule
 from torchvision.datasets import MNIST
+from torch.utils.tensorboard import SummaryWriter
 
 class LeNet5(pl.LightningModule):
     def __init__(self):
@@ -78,5 +79,9 @@ if __name__ == '__main__':
         trainer = pl.Trainer(gpus=-1)
     except pl.utilities.exceptions.MisconfigurationException:
         trainer = pl.Trainer(gpus=0)
+        writer = SummaryWriter('lightning_logs/vis_lenet')
+        data = torch.randn([32, 1, 28, 28])
+        writer.add_graph(LeNet, data)
+
     trainer.fit(LeNet, dm)
     trainer.test(datamodule=dm)

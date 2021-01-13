@@ -1,9 +1,11 @@
+import os
 from typing import List, Union, cast
 
 import pytorch_lightning as pl
 import torch
 import torch.nn.functional as F
 from pytorch_lightning.metrics import functional as FM
+from torch.utils.tensorboard import SummaryWriter
 
 from torch import nn
 
@@ -32,18 +34,16 @@ class VGGNet(pl.LightningModule):
     def __init__(self, learning_rate=1e-3):
         super().__init__()
         self.learning_rate = learning_rate
-        self.features = make_layers(
-            [64, 64, 'M', 128, 128, 'M', 256, 256, 256, 256, 'M', 512, 512, 512, 512, 'M', 512, 512, 512, 512, 'M'],
-            True)  # VGG19
+        self.features = make_layers([64, 'M', 128, 'M', 128, 128, 'M', 256, 256, 'M'])  #VGG8
         self.avgpool = nn.AdaptiveAvgPool2d((7, 7))
         self.classifier = nn.Sequential(
-            nn.Linear(512 * 7 * 7, 4096),
+            nn.Linear(256 * 7 * 7, 1024),
             nn.ReLU(True),
             nn.Dropout(),
-            nn.Linear(4096, 4096),
+            nn.Linear(1024, 1024),
             nn.ReLU(True),
             nn.Dropout(),
-            nn.Linear(4096, 10),
+            nn.Linear(1024, 10),
             nn.LogSoftmax(dim=-1)
         )
 
@@ -92,6 +92,9 @@ if __name__ == '__main__':
         trainer = pl.Trainer(gpus=-1)
     except pl.utilities.exceptions.MisconfigurationException:
         trainer = pl.Trainer(gpus=0, fast_dev_run=True)
+        writer = SummaryWriter('lightning_logs/vis_cnn')
+        data = torch.randn([32, 3, 32, 32])
+        writer.add_graph(model, data)
 
     trainer.fit(model, dm)
     trainer.test(datamodule=dm)
