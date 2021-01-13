@@ -7,7 +7,7 @@ from torch import nn
 from DataModule import DataModule
 from torchvision.datasets import CIFAR10
 
-class LeNet5(pl.LightningModule):
+class AlexNet(pl.LightningModule):
     def __init__(self):
         super().__init__()
         self.features = nn.Sequential(
@@ -76,7 +76,7 @@ class LeNet5(pl.LightningModule):
 
 if __name__ == '__main__':
     dm = DataModule(CIFAR10)
-    LeNet = LeNet5()
+    LeNet = AlexNet()
     try:
         trainer = pl.Trainer(gpus=-1)
     except pl.utilities.exceptions.MisconfigurationException:
