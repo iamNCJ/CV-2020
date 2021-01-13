@@ -4,6 +4,8 @@ import torch.nn.functional as F
 from pytorch_lightning.metrics import functional as FM
 from torch import nn
 
+from DataModule import DataModule
+from torchvision.datasets import MNIST
 
 class LeNet5(pl.LightningModule):
     def __init__(self):
@@ -64,3 +66,14 @@ class LeNet5(pl.LightningModule):
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=1e-3)
         return optimizer
+
+
+if __name__ == '__main__':
+    dm = DataModule(MNIST)
+    LeNet = LeNet5()
+    try:
+        trainer = pl.Trainer(gpus=-1)
+    except pl.utilities.exceptions.MisconfigurationException:
+        trainer = pl.Trainer(gpus=0)
+    trainer.fit(LeNet, dm)
+    trainer.test(datamodule=dm)

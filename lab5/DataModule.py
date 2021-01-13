@@ -6,11 +6,12 @@ from torchvision import transforms
 
 
 class DataModule(pl.LightningDataModule):
-    def __init__(self, datasets, batch_size=32):
+    def __init__(self, datasets, batch_size=32, split_ratio=0.7):
         super().__init__()
         self.datasets = datasets
         self.batch_size = batch_size
         self.model_dir = os.getcwd() + '/datasets'
+        self.split_ratio = split_ratio
 
     def prepare_data(self):
         self.datasets(self.model_dir, train=True, download=True)
@@ -25,7 +26,10 @@ class DataModule(pl.LightningDataModule):
         # split dataset
         if stage == 'fit':
             training_data = self.datasets(self.model_dir, train=True, transform=transform)
-            self.training_data, self.mnist_val = random_split(training_data, [55000, 5000])
+            training_data_count = int(len(training_data) * self.split_ratio)
+            validating_data_count = len(training_data) - training_data_count
+            self.training_data, self.validating_data = random_split(training_data,
+                                                                    [training_data_count, validating_data_count])
         if stage == 'test':
             self.testing_data = self.datasets(self.model_dir, train=False, transform=transform)
 
@@ -35,7 +39,7 @@ class DataModule(pl.LightningDataModule):
         return training_data
 
     def val_dataloader(self):
-        validating_data = DataLoader(self.mnist_val, batch_size=self.batch_size)
+        validating_data = DataLoader(self.validating_data, batch_size=self.batch_size)
         return validating_data
 
     def test_dataloader(self):
