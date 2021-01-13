@@ -3,6 +3,7 @@ import os
 import pytorch_lightning as pl
 import torch
 import torch.nn.functional as F
+from pytorch_lightning.metrics import functional as FM
 from torch import nn
 from torch.utils.data import DataLoader, random_split
 from torchvision import transforms
@@ -40,14 +41,29 @@ class LeNet5(pl.LightningModule):
         result = self.network(x)
         return result
 
-    def training_step(self, batch, batch_idx):
-        # training_step defined the train loop.
-        # It is independent of forward
+    def compute(self, batch, batch_idx):
         x, y = batch
         y_hat = self(x)
         loss = F.cross_entropy(y_hat, y)
-        # Logging to TensorBoard
+        acc = FM.accuracy(y_hat, y)
+        return loss, acc
+
+    def training_step(self, batch, batch_idx):
+        loss, acc = self.compute(batch, batch_idx)
         self.log('train_loss', loss)
+        self.log('train_acc', acc)
+        return loss
+
+    def test_step(self, batch, batch_idx):
+        loss, acc = self.compute(batch, batch_idx)
+        self.log('test_loss', loss)
+        self.log('test_acc', acc)
+        return loss
+
+    def validation_step(self, batch, batch_idx):
+        loss, acc = self.compute(batch, batch_idx)
+        self.log('val_loss', loss)
+        self.log('val_acc', acc)
         return loss
 
     def configure_optimizers(self):
