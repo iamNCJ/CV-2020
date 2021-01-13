@@ -1,3 +1,5 @@
+from typing import List, Union, cast
+
 import pytorch_lightning as pl
 import torch
 import torch.nn.functional as F
@@ -7,32 +9,36 @@ from torch import nn
 from DataModule import DataModule
 from torchvision.datasets import CIFAR10
 
-class AlexNet(pl.LightningModule):
+
+def make_layers(cfg: List[Union[str, int]], batch_norm: bool = False) -> nn.Sequential:
+    layers: List[nn.Module] = []
+    in_channels = 3
+    for v in cfg:
+        if v == 'M':
+            layers += [nn.MaxPool2d(kernel_size=2, stride=2)]
+        else:
+            v = cast(int, v)
+            conv2d = nn.Conv2d(in_channels, v, kernel_size=3, padding=1)
+            if batch_norm:
+                layers += [conv2d, nn.BatchNorm2d(v), nn.ReLU(inplace=True)]
+            else:
+                layers += [conv2d, nn.ReLU(inplace=True)]
+            in_channels = v
+    return nn.Sequential(*layers)
+
+
+class VGGNet(pl.LightningModule):
     def __init__(self):
         super().__init__()
-        self.features = nn.Sequential(
-            nn.Conv2d(3, 64, kernel_size=3, stride=2, padding=2),
-            nn.ReLU(inplace=True),
-            nn.MaxPool2d(kernel_size=3, stride=2),
-            nn.Conv2d(64, 192, kernel_size=5, padding=2),
-            nn.ReLU(inplace=True),
-            nn.MaxPool2d(kernel_size=3, stride=2),
-            nn.Conv2d(192, 384, kernel_size=3, padding=1),
-            nn.ReLU(inplace=True),
-            nn.Conv2d(384, 256, kernel_size=3, padding=1),
-            nn.ReLU(inplace=True),
-            nn.Conv2d(256, 256, kernel_size=3, padding=1),
-            nn.ReLU(inplace=True),
-            nn.MaxPool2d(kernel_size=3, stride=2),
-        )
-        self.avgpool = nn.AdaptiveAvgPool2d((6, 6))
+        self.features = make_layers([64, 64, 'M', 128, 128, 'M', 256, 256, 256, 256, 'M', 512, 512, 512, 512, 'M', 512, 512, 512, 512, 'M'], True)
+        self.avgpool = nn.AdaptiveAvgPool2d((7, 7))
         self.classifier = nn.Sequential(
-            nn.Dropout(),
-            nn.Linear(256 * 6 * 6, 4096),
-            nn.ReLU(inplace=True),
+            nn.Linear(512 * 7 * 7, 4096),
+            nn.ReLU(True),
             nn.Dropout(),
             nn.Linear(4096, 4096),
-            nn.ReLU(inplace=True),
+            nn.ReLU(True),
+            nn.Dropout(),
             nn.Linear(4096, 10),
             nn.LogSoftmax(dim=-1)
         )
@@ -76,7 +82,7 @@ class AlexNet(pl.LightningModule):
 
 if __name__ == '__main__':
     dm = DataModule(CIFAR10)
-    LeNet = AlexNet()
+    LeNet = VGGNet()
     try:
         trainer = pl.Trainer(gpus=-1)
     except pl.utilities.exceptions.MisconfigurationException:
