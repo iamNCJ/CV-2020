@@ -104,6 +104,6 @@ if __name__ == '__main__':
 
     # most basic trainer, uses good defaults (auto-tensorboard, checkpoints, logs, and more)
     # trainer = pl.Trainer(gpus=8) (if you have GPUs)
-    trainer = pl.Trainer(auto_select_gpus=True, max_epochs=10)
+    trainer = pl.Trainer(gpus=1, max_epochs=10)
     trainer.fit(LeNet, dm)
     trainer.test(datamodule=dm)
